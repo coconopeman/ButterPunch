@@ -596,9 +596,25 @@
             reader.onload = (evt) => {
                 const img = new Image();
                 img.onload = () => {
-                    state.image = img;
-                    state.imageWidth = img.width;
-                    state.imageHeight = img.height;
+                    // Some phone photos carry an EXIF orientation tag (portrait shots are
+                    // often stored as rotated landscape pixels + a "please rotate 90°"
+                    // flag). A plain <img> respects that tag when painted normally, but a
+                    // canvas drawImage() call made *inside* an active rotate/translate
+                    // transform (exactly what the punch-to-box slice below does) can
+                    // apply that correction inconsistently across browsers, which is what
+                    // produced the occasional "punched slice looks rotated 90°" glitch.
+                    // Baking the image onto a plain canvas once, up front, "burns in" the
+                    // correct orientation as plain pixels with no leftover metadata, so
+                    // every later drawImage() of it — transformed or not — behaves
+                    // identically.
+                    const normalized = document.createElement('canvas');
+                    normalized.width = img.naturalWidth || img.width;
+                    normalized.height = img.naturalHeight || img.height;
+                    normalized.getContext('2d').drawImage(img, 0, 0);
+
+                    state.image = normalized;
+                    state.imageWidth = normalized.width;
+                    state.imageHeight = normalized.height;
                     state.punches = [];
                     state.texts = [];
                     state.history = [];
