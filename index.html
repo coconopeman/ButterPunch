@@ -15,14 +15,15 @@
 
     <style>
         :root {
-            --surface: #fcfcfa;      /* base canvas / background */
-            --line: #718a7d;         /* signature sage-green line color */
-            --accent: #718a7d;       /* saturated action / brand accent */
-            --accent-hover: #5c7167;
-            --accent-soft: #eef2f0;  /* light tint for panels & inputs */
-            --panel-border: #dbe3de; /* soft neutral border, same hue family */
-            --ink: #1c2233;          /* primary text */
-            --ink-soft: #6b7280;     /* secondary text */
+            --surface: #fcfcfa;       /* base canvas / background */
+            --line: #545454;          /* signature accent — used for borders/outlines only */
+            --accent: #545454;        /* saturated action / brand accent — borders & text only, no fills */
+            --accent-hover: #363636;
+            --neutral-fill: #f5f5f4;  /* plain neutral panel/input background (no accent tint) */
+            --neutral-fill-hover: #ececea;
+            --panel-border: #e2e2e0; /* plain neutral border, unrelated to accent hue */
+            --ink: #1c2233;           /* primary text */
+            --ink-soft: #6b7280;      /* secondary text */
             --danger: #e0455f;
             --danger-soft: #fdedf0;
             --danger-border: #f4c3cd;
@@ -33,8 +34,8 @@
         .canvas-bg {
             background-color: var(--surface);
             background-image:
-                linear-gradient(to right, rgba(113, 138, 125, 0.28) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(113, 138, 125, 0.28) 1px, transparent 1px);
+                linear-gradient(to right, rgba(84, 84, 84, 0.16) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(84, 84, 84, 0.16) 1px, transparent 1px);
             background-size: 20px 20px;
         }
 
@@ -52,23 +53,25 @@
         ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--line); }
 
-        /* Reusable component classes (kept in sync with JS class toggles) */
+        /* Reusable component classes (kept in sync with JS class toggles).
+           Accent color is applied as a BORDER/TEXT color only — no tinted or
+           semi-transparent accent fills are used anywhere in the UI. */
         .btn-neutral {
-            background: var(--accent-soft);
+            background: #ffffff;
             border: 1px solid var(--panel-border);
             color: var(--ink);
             transition: background-color .15s ease, border-color .15s ease;
         }
-        .btn-neutral:hover:not(:disabled) { background: #e2e9e4; }
+        .btn-neutral:hover:not(:disabled) { background: var(--neutral-fill); }
         .btn-neutral:disabled { opacity: .4; }
 
         .btn-primary {
-            background: var(--accent);
+            background: var(--surface);
             border: 2px solid var(--accent);
-            color: #ffffff;
-            transition: background-color .15s ease, border-color .15s ease;
+            color: var(--accent);
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
         }
-        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+        .btn-primary:hover { background: var(--accent); color: #ffffff; border-color: var(--accent-hover); }
 
         .btn-danger-outline {
             background: var(--danger-soft);
@@ -79,7 +82,7 @@
         .btn-danger-outline:hover { background: #fbdde3; }
 
         .field-box {
-            background: var(--accent-soft);
+            background: #ffffff;
             border: 1px solid var(--panel-border);
             color: var(--ink);
         }
@@ -87,15 +90,15 @@
 
         .seg-btn {
             border: 1px solid var(--panel-border);
-            background: var(--accent-soft);
+            background: #ffffff;
             color: var(--ink-soft);
             transition: background-color .15s ease, border-color .15s ease, color .15s ease;
         }
-        .seg-btn:hover { background: #e2e9e4; color: var(--ink); }
+        .seg-btn:hover { background: var(--neutral-fill); color: var(--ink); }
         .seg-btn.active {
             border: 2px solid var(--line);
-            background: var(--accent);
-            color: #ffffff;
+            background: #ffffff;
+            color: var(--accent);
             font-weight: 700;
         }
 
@@ -128,7 +131,7 @@
     <!-- Top Header Navigation -->
     <header class="h-14 border-b-2 px-4 flex items-center justify-between z-20 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
         <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-bold" style="background-color: var(--accent);">
+            <div class="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold" style="background-color: var(--surface); border: 2px solid var(--accent); color: var(--accent);">
                 <i class="fa-solid fa-hole-punch"></i>
             </div>
             <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
@@ -167,7 +170,7 @@
                     <h2 class="section-title text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                         <i class="fa-solid fa-image"></i> 이미지 불러오기
                     </h2>
-                    <label id="dropZone" class="group relative flex flex-col items-center justify-center h-20 rounded-lg cursor-pointer transition overflow-hidden" style="border: 2px dashed var(--line); background-color: var(--accent-soft);">
+                    <label id="dropZone" class="group relative flex flex-col items-center justify-center h-20 rounded-lg cursor-pointer transition overflow-hidden" style="border: 2px dashed var(--line); background-color: var(--neutral-fill);">
                         <input type="file" id="imageInput" accept="image/*" class="hidden" />
                         <div class="flex flex-col items-center gap-1 transition" style="color: var(--ink-soft);">
                             <i class="fa-solid fa-cloud-arrow-up text-lg mb-0.5" style="color: var(--accent);"></i>
@@ -185,10 +188,33 @@
 
                     <!-- Box Color -->
                     <div>
-                        <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">박스 색상</label>
-                        <div class="flex items-center gap-2">
-                            <input type="color" id="boxColorPicker" value="#718a7d" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
-                            <input type="text" id="boxColorHex" value="#718A7D" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-semibold" style="color: var(--ink-soft);">박스 색상</label>
+                            <div class="flex gap-1">
+                                <button type="button" data-boxmode="solid" class="box-mode-btn seg-btn active px-2 py-0.5 rounded-md text-[10px] font-semibold transition">단색</button>
+                                <button type="button" data-boxmode="gradient" class="box-mode-btn seg-btn px-2 py-0.5 rounded-md text-[10px] font-semibold transition">그라데이션</button>
+                            </div>
+                        </div>
+
+                        <!-- Solid color controls -->
+                        <div id="boxSolidControls" class="flex items-center gap-2">
+                            <input type="color" id="boxColorPicker" value="#545454" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                            <input type="text" id="boxColorHex" value="#545454" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                        </div>
+
+                        <!-- Gradient controls (top -> bottom only) -->
+                        <div id="boxGradientControls" class="hidden space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="boxGradientTopPicker" value="#2b2b2b" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                                <input type="text" id="boxGradientTopHex" value="#2B2B2B" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                                <span class="text-[10px] w-6 text-right" style="color: var(--ink-soft);">상단</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="boxGradientBottomPicker" value="#8f8f8f" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                                <input type="text" id="boxGradientBottomHex" value="#8F8F8F" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                                <span class="text-[10px] w-6 text-right" style="color: var(--ink-soft);">하단</span>
+                            </div>
+                            <p class="text-[10px] leading-relaxed" style="color: var(--ink-soft);">상단에서 하단으로 자연스럽게 번지는 세로 그라데이션만 지원돼요.</p>
                         </div>
                     </div>
 
@@ -235,7 +261,7 @@
                     </div>
 
                     <!-- Size & Rotation Sliders -->
-                    <div class="space-y-2 p-2.5 rounded-lg" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                    <div class="space-y-2 p-2.5 rounded-lg" style="background-color: var(--neutral-fill); border: 1px solid var(--panel-border);">
                         <div>
                             <div class="flex justify-between text-xs font-semibold mb-1" style="color: var(--ink-soft);">
                                 <span>크기 (Size)</span>
@@ -255,7 +281,7 @@
                     <!-- Mini Shape Live Preview Box -->
                     <div>
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">미리보기</label>
-                        <div class="h-16 rounded-lg flex items-center justify-center relative overflow-hidden" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                        <div class="h-16 rounded-lg flex items-center justify-center relative overflow-hidden" style="background-color: var(--neutral-fill); border: 1px solid var(--panel-border);">
                             <canvas id="miniPreviewCanvas" width="100" height="60"></canvas>
                         </div>
                     </div>
@@ -281,7 +307,7 @@
                         <!-- Mini Text Live Preview Box -->
                         <div>
                             <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">미리보기</label>
-                            <div class="h-14 rounded-lg flex items-center justify-center relative overflow-hidden p-1" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                            <div class="h-14 rounded-lg flex items-center justify-center relative overflow-hidden p-1" style="background-color: var(--neutral-fill); border: 1px solid var(--panel-border);">
                                 <canvas id="textPreviewCanvas" width="220" height="45"></canvas>
                             </div>
                         </div>
@@ -302,7 +328,7 @@
 
             <!-- Empty State Overlay (When no image is loaded) -->
             <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-xs z-10 pointer-events-none" style="background-color: rgba(252, 252, 250, 0.95);">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background-color: var(--neutral-fill); border: 1px solid var(--panel-border);">
                     <i class="fa-solid fa-image text-lg" style="color: var(--accent);"></i>
                 </div>
                 <h3 class="text-base font-bold mb-1" style="color: var(--ink);">사진을 불러와서 시작하세요</h3>
@@ -365,7 +391,9 @@
             image: null,           // HTMLImageElement
             imageWidth: 0,
             imageHeight: 0,
-            boxColor: '#718a7d',
+            boxColor: '#545454',
+            boxColorMode: 'solid', // 'solid' | 'gradient'
+            boxGradient: { top: '#2b2b2b', bottom: '#8f8f8f' }, // top -> bottom only
             boxPosition: 'right',  // 'right' | 'left' | 'top' | 'bottom'
             punch: {
                 shape: 'circle',   // 'circle', 'square', 'triangle', 'star', 'urchin'
@@ -400,6 +428,12 @@
 
         const boxColorPicker = document.getElementById('boxColorPicker');
         const boxColorHex = document.getElementById('boxColorHex');
+        const boxSolidControls = document.getElementById('boxSolidControls');
+        const boxGradientControls = document.getElementById('boxGradientControls');
+        const boxGradientTopPicker = document.getElementById('boxGradientTopPicker');
+        const boxGradientTopHex = document.getElementById('boxGradientTopHex');
+        const boxGradientBottomPicker = document.getElementById('boxGradientBottomPicker');
+        const boxGradientBottomHex = document.getElementById('boxGradientBottomHex');
 
         const punchSize = document.getElementById('punchSize');
         const punchRot = document.getElementById('punchRot');
@@ -437,11 +471,15 @@
         const POS_BTN_ACTIVE = 'pos-btn seg-btn active py-1 rounded-lg text-xs font-semibold transition';
         const SHAPE_BTN_BASE = 'shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition';
         const SHAPE_BTN_ACTIVE = 'shape-btn seg-btn active py-1.5 rounded-lg flex items-center justify-center transition';
+        const BOX_MODE_BTN_BASE = 'box-mode-btn seg-btn px-2 py-0.5 rounded-md text-[10px] font-semibold transition';
+        const BOX_MODE_BTN_ACTIVE = 'box-mode-btn seg-btn active px-2 py-0.5 rounded-md text-[10px] font-semibold transition';
 
         // --- History Management ---
         function saveHistory() {
             const snap = {
                 boxColor: state.boxColor,
+                boxColorMode: state.boxColorMode,
+                boxGradient: { ...state.boxGradient },
                 boxPosition: state.boxPosition,
                 punches: JSON.parse(JSON.stringify(state.punches)),
                 texts: JSON.parse(JSON.stringify(state.texts))
@@ -479,15 +517,63 @@
 
         function applySnapshot(snap) {
             state.boxColor = snap.boxColor;
+            state.boxColorMode = snap.boxColorMode || 'solid';
+            state.boxGradient = snap.boxGradient ? { ...snap.boxGradient } : { top: '#2b2b2b', bottom: '#8f8f8f' };
             state.boxPosition = snap.boxPosition;
             state.punches = JSON.parse(JSON.stringify(snap.punches));
             state.texts = JSON.parse(JSON.stringify(snap.texts));
 
             boxColorPicker.value = state.boxColor;
-            boxColorHex.value = state.boxColor;
+            boxColorHex.value = state.boxColor.toUpperCase();
+            boxGradientTopPicker.value = state.boxGradient.top;
+            boxGradientTopHex.value = state.boxGradient.top.toUpperCase();
+            boxGradientBottomPicker.value = state.boxGradient.bottom;
+            boxGradientBottomHex.value = state.boxGradient.bottom.toUpperCase();
+            updateBoxModeUI();
+            rebuildBoxColorLayer();
+
             document.querySelectorAll('.pos-btn').forEach(b => {
                 b.className = (b.dataset.pos === state.boxPosition) ? POS_BTN_ACTIVE : POS_BTN_BASE;
             });
+        }
+
+        function updateBoxModeUI() {
+            document.querySelectorAll('.box-mode-btn').forEach(b => {
+                b.className = (b.dataset.boxmode === state.boxColorMode) ? BOX_MODE_BTN_ACTIVE : BOX_MODE_BTN_BASE;
+            });
+            if (state.boxColorMode === 'gradient') {
+                boxSolidControls.classList.add('hidden');
+                boxGradientControls.classList.remove('hidden');
+            } else {
+                boxSolidControls.classList.remove('hidden');
+                boxGradientControls.classList.add('hidden');
+            }
+        }
+
+        // Offscreen canvas holding the current box "material" (solid color or
+        // top->bottom gradient) at the image's own dimensions. Both the adjacent
+        // box and any punched-out holes on the photo sample their color from
+        // this single layer, so solid and gradient modes render identically.
+        const boxLayerCanvas = document.createElement('canvas');
+        const boxLayerCtx = boxLayerCanvas.getContext('2d');
+
+        function rebuildBoxColorLayer() {
+            const w = state.imageWidth;
+            const h = state.imageHeight;
+            if (!w || !h) return;
+
+            boxLayerCanvas.width = w;
+            boxLayerCanvas.height = h;
+
+            if (state.boxColorMode === 'gradient') {
+                const grad = boxLayerCtx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, state.boxGradient.top);
+                grad.addColorStop(1, state.boxGradient.bottom);
+                boxLayerCtx.fillStyle = grad;
+            } else {
+                boxLayerCtx.fillStyle = state.boxColor;
+            }
+            boxLayerCtx.fillRect(0, 0, w, h);
         }
 
         // --- Image Loading ---
@@ -518,6 +604,7 @@
                     state.redoStack = [];
                     emptyState.style.display = 'none';
                     resetZoom();
+                    rebuildBoxColorLayer();
                     saveHistory();
                     render();
                 };
@@ -530,6 +617,7 @@
         boxColorPicker.addEventListener('input', (e) => {
             state.boxColor = e.target.value;
             boxColorHex.value = e.target.value;
+            rebuildBoxColorLayer();
             render();
         });
         boxColorPicker.addEventListener('change', () => saveHistory());
@@ -540,8 +628,59 @@
             if (/^#[0-9A-F]{6}$/i.test(val)) {
                 state.boxColor = val;
                 boxColorPicker.value = val;
+                rebuildBoxColorLayer();
                 saveHistory();
                 render();
+            }
+        });
+
+        // Box color mode toggle: solid vs. top->bottom gradient
+        document.querySelectorAll('.box-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (state.boxColorMode === btn.dataset.boxmode) return;
+                state.boxColorMode = btn.dataset.boxmode;
+                updateBoxModeUI();
+                rebuildBoxColorLayer();
+                saveHistory();
+                render();
+            });
+        });
+
+        function handleGradientColorInput(stop, value) {
+            state.boxGradient[stop] = value;
+            rebuildBoxColorLayer();
+            render();
+        }
+
+        boxGradientTopPicker.addEventListener('input', (e) => {
+            boxGradientTopHex.value = e.target.value;
+            handleGradientColorInput('top', e.target.value);
+        });
+        boxGradientTopPicker.addEventListener('change', () => saveHistory());
+
+        boxGradientTopHex.addEventListener('change', (e) => {
+            let val = e.target.value;
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                boxGradientTopPicker.value = val;
+                handleGradientColorInput('top', val);
+                saveHistory();
+            }
+        });
+
+        boxGradientBottomPicker.addEventListener('input', (e) => {
+            boxGradientBottomHex.value = e.target.value;
+            handleGradientColorInput('bottom', e.target.value);
+        });
+        boxGradientBottomPicker.addEventListener('change', () => saveHistory());
+
+        boxGradientBottomHex.addEventListener('change', (e) => {
+            let val = e.target.value;
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                boxGradientBottomPicker.value = val;
+                handleGradientColorInput('bottom', val);
+                saveHistory();
             }
         });
 
@@ -799,9 +938,8 @@
             mainCanvas.width = layout.totalWidth;
             mainCanvas.height = layout.totalHeight;
 
-            // 1. Draw Solid Colored Adjacent Box
-            ctx.fillStyle = state.boxColor;
-            ctx.fillRect(layout.boxX, layout.boxY, layout.w, layout.h);
+            // 1. Draw the Box (solid color or top->bottom gradient, via the pre-rendered box layer)
+            ctx.drawImage(boxLayerCanvas, layout.boxX, layout.boxY, layout.w, layout.h);
 
             // 2. Draw Original Base Image
             ctx.drawImage(state.image, layout.imgX, layout.imgY, layout.w, layout.h);
@@ -811,13 +949,14 @@
                 const radius = p.size / 2;
                 const rotRad = (p.rotation * Math.PI) / 180;
 
-                // 3-1: Fill hole on Image with Box Color
+                // 3-1: Fill hole on Image with the same Box material (color/gradient),
+                // sampled from the same relative position as the box itself.
                 ctx.save();
                 ctx.translate(layout.imgX + p.relativeX, layout.imgY + p.relativeY);
                 ctx.rotate(rotRad);
                 drawShapePath(ctx, p.shape, radius);
-                ctx.fillStyle = state.boxColor;
-                ctx.fill();
+                ctx.clip();
+                ctx.drawImage(boxLayerCanvas, -p.relativeX, -p.relativeY, layout.w, layout.h);
                 ctx.restore();
 
                 // 3-2: Cut hole on Box & Transfer exact Image Slice onto Box
