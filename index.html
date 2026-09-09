@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUTTER PUNCH</title>
+    <title>BUTTER PUNCH!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -135,7 +135,7 @@
                 <i class="fa-solid fa-hole-punch"></i>
             </div>
             <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
-                BUTTER PUNCH
+                BUTTER PUNCH!
             </h1>
         </div>
 
@@ -411,7 +411,9 @@
             isHoveringCanvas: false,
             editingTextIndex: -1,
             viewZoom: 1,            // display-only scale of #canvasWrapper; never affects saved image size
-            isHoveringViewport: false
+            isHoveringViewport: false,
+            isPanning: false,
+            panStart: null
         };
 
         // --- DOM Elements ---
@@ -535,6 +537,8 @@
             document.querySelectorAll('.pos-btn').forEach(b => {
                 b.className = (b.dataset.pos === state.boxPosition) ? POS_BTN_ACTIVE : POS_BTN_BASE;
             });
+
+            centerViewport();
         }
 
         function updateBoxModeUI() {
@@ -691,6 +695,7 @@
                 state.boxPosition = btn.dataset.pos;
                 saveHistory();
                 render();
+                centerViewport();
             });
         });
 
@@ -759,7 +764,7 @@
             // Render clean version without hover overlays
             render(true);
             const link = document.createElement('a');
-            link.download = `BUTTER_punch_${Date.now()}.png`;
+            link.download = `butter_punch_${Date.now()}.png`;
             link.href = mainCanvas.toDataURL('image/png');
             link.click();
             render();
@@ -784,6 +789,7 @@
         function applyZoom() {
             canvasWrapper.style.transform = `scale(${state.viewZoom})`;
             zoomValue.textContent = `${Math.round(state.viewZoom * 100)}%`;
+            centerViewport();
         }
 
         function setZoom(nextZoom) {
@@ -794,6 +800,49 @@
         function zoomIn() { setZoom(state.viewZoom + ZOOM_STEP); }
         function zoomOut() { setZoom(state.viewZoom - ZOOM_STEP); }
         function resetZoom() { setZoom(1); }
+
+        // Keep the image+box composite centered in the viewport whenever it doesn't
+        // fully fit (e.g. the browser window is narrow, or a left/right box makes
+        // the canvas twice as wide). Without this, an overflowing canvas would just
+        // sit flush against one edge instead of staying centered.
+        function centerViewport() {
+            requestAnimationFrame(() => {
+                canvasViewport.scrollLeft = Math.max(0, (canvasViewport.scrollWidth - canvasViewport.clientWidth) / 2);
+                canvasViewport.scrollTop = Math.max(0, (canvasViewport.scrollHeight - canvasViewport.clientHeight) / 2);
+            });
+        }
+
+        window.addEventListener('resize', centerViewport);
+
+        // Middle-mouse-button drag panning (left click is used for punching/dragging
+        // text, right click for delete/edit, so the middle button is free for panning
+        // without any conflict) — handy when zoomed in or the canvas is larger than
+        // the visible viewport.
+        canvasViewport.addEventListener('mousedown', (e) => {
+            if (e.button !== 1) return;
+            e.preventDefault();
+            state.isPanning = true;
+            state.panStart = {
+                x: e.clientX,
+                y: e.clientY,
+                scrollLeft: canvasViewport.scrollLeft,
+                scrollTop: canvasViewport.scrollTop
+            };
+            canvasViewport.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isPanning || !state.panStart) return;
+            canvasViewport.scrollLeft = state.panStart.scrollLeft - (e.clientX - state.panStart.x);
+            canvasViewport.scrollTop = state.panStart.scrollTop - (e.clientY - state.panStart.y);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!state.isPanning) return;
+            state.isPanning = false;
+            state.panStart = null;
+            canvasViewport.style.cursor = '';
+        });
 
         canvasViewport.addEventListener('mouseenter', () => { state.isHoveringViewport = true; });
         canvasViewport.addEventListener('mouseleave', () => { state.isHoveringViewport = false; });
