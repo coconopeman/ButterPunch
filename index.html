@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUTTER PUNCH</title>
+    <title>POTO PUNCH!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -16,11 +16,11 @@
     <style>
         :root {
             --surface: #fcfcfa;      /* base canvas / background */
-            --line: #9cb3f7;         /* signature periwinkle line color */
-            --accent: #5b6fe0;       /* saturated action / brand accent */
-            --accent-hover: #4a5cc9;
-            --accent-soft: #eef0fd;  /* light tint for panels & inputs */
-            --panel-border: #dbe0f5; /* soft neutral border, same hue family */
+            --line: #718a7d;         /* signature sage-green line color */
+            --accent: #718a7d;       /* saturated action / brand accent */
+            --accent-hover: #5c7167;
+            --accent-soft: #eef2f0;  /* light tint for panels & inputs */
+            --panel-border: #dbe3de; /* soft neutral border, same hue family */
             --ink: #1c2233;          /* primary text */
             --ink-soft: #6b7280;     /* secondary text */
             --danger: #e0455f;
@@ -33,8 +33,8 @@
         .canvas-bg {
             background-color: var(--surface);
             background-image:
-                linear-gradient(to right, rgba(156, 179, 247, 0.28) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(156, 179, 247, 0.28) 1px, transparent 1px);
+                linear-gradient(to right, rgba(113, 138, 125, 0.28) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(113, 138, 125, 0.28) 1px, transparent 1px);
             background-size: 20px 20px;
         }
 
@@ -59,7 +59,7 @@
             color: var(--ink);
             transition: background-color .15s ease, border-color .15s ease;
         }
-        .btn-neutral:hover:not(:disabled) { background: #e4e8fb; }
+        .btn-neutral:hover:not(:disabled) { background: #e2e9e4; }
         .btn-neutral:disabled { opacity: .4; }
 
         .btn-primary {
@@ -91,7 +91,7 @@
             color: var(--ink-soft);
             transition: background-color .15s ease, border-color .15s ease, color .15s ease;
         }
-        .seg-btn:hover { background: #e4e8fb; color: var(--ink); }
+        .seg-btn:hover { background: #e2e9e4; color: var(--ink); }
         .seg-btn.active {
             border: 2px solid var(--line);
             background: var(--accent);
@@ -101,6 +101,26 @@
 
         .section-title { color: var(--ink); }
         .section-title i { color: var(--accent); }
+
+        /* View-only zoom (does not affect exported image resolution) */
+        #canvasWrapper { transform-origin: center center; }
+        #zoomIndicator {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            background: var(--surface);
+            border: 1px solid var(--panel-border);
+            color: var(--ink-soft);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            box-shadow: 0 1px 4px rgba(28, 34, 51, 0.08);
+            cursor: pointer;
+            user-select: none;
+            z-index: 15;
+        }
+        #zoomIndicator:hover { border-color: var(--line); color: var(--ink); }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden select-none" style="background-color: var(--surface);">
@@ -112,7 +132,7 @@
                 <i class="fa-solid fa-hole-punch"></i>
             </div>
             <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
-                BUTTER PUNCH
+                POTO PUNCH!
             </h1>
         </div>
 
@@ -167,8 +187,8 @@
                     <div>
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">박스 색상</label>
                         <div class="flex items-center gap-2">
-                            <input type="color" id="boxColorPicker" value="#5b6fe0" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
-                            <input type="text" id="boxColorHex" value="#5B6FE0" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                            <input type="color" id="boxColorPicker" value="#718a7d" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                            <input type="text" id="boxColorHex" value="#718A7D" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
                         </div>
                     </div>
 
@@ -273,7 +293,7 @@
         </aside>
 
         <!-- Main Interactive Canvas Viewport -->
-        <main class="flex-1 canvas-bg relative overflow-auto flex items-center justify-center p-8">
+        <main id="canvasViewport" class="flex-1 canvas-bg relative overflow-auto flex items-center justify-center p-8">
 
             <!-- Canvas Holder -->
             <div id="canvasWrapper" class="relative rounded-lg overflow-hidden border-2 transition-all" style="border-color: var(--line); box-shadow: 0 4px 16px rgba(28, 34, 51, 0.06);">
@@ -287,6 +307,11 @@
                 </div>
                 <h3 class="text-base font-bold mb-1" style="color: var(--ink);">사진을 불러와서 시작하세요</h3>
                 <p class="text-xs max-w-sm text-center" style="color: var(--ink-soft);">좌측 메뉴에서 사진을 업로드하면 자동으로 박스가 생성됩니다.</p>
+            </div>
+
+            <!-- View Zoom Indicator (display-only scale; does not affect saved image size) -->
+            <div id="zoomIndicator" title="캔버스 위에서 Ctrl + 스크롤 또는 Ctrl + / - 로 화면 확대·축소 (클릭 시 100%로 초기화)">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomValue">100%</span>
             </div>
         </main>
     </div>
@@ -340,7 +365,7 @@
             image: null,           // HTMLImageElement
             imageWidth: 0,
             imageHeight: 0,
-            boxColor: '#5b6fe0',
+            boxColor: '#718a7d',
             boxPosition: 'right',  // 'right' | 'left' | 'top' | 'bottom'
             punch: {
                 shape: 'circle',   // 'circle', 'square', 'triangle', 'star', 'urchin'
@@ -356,7 +381,9 @@
             dragOffset: { x: 0, y: 0 },
             mousePos: { x: 0, y: 0 },
             isHoveringCanvas: false,
-            editingTextIndex: -1
+            editingTextIndex: -1,
+            viewZoom: 1,            // display-only scale of #canvasWrapper; never affects saved image size
+            isHoveringViewport: false
         };
 
         // --- DOM Elements ---
@@ -388,6 +415,12 @@
         const btnRedo = document.getElementById('btnRedo');
         const btnClear = document.getElementById('btnClear');
         const btnDownload = document.getElementById('btnDownload');
+
+        // View-zoom elements (display-only; does not touch canvas resolution)
+        const canvasViewport = document.getElementById('canvasViewport');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const zoomIndicator = document.getElementById('zoomIndicator');
+        const zoomValue = document.getElementById('zoomValue');
 
         // Modal Elements
         const textEditModal = document.getElementById('textEditModal');
@@ -484,6 +517,7 @@
                     state.history = [];
                     state.redoStack = [];
                     emptyState.style.display = 'none';
+                    resetZoom();
                     saveHistory();
                     render();
                 };
@@ -586,7 +620,7 @@
             // Render clean version without hover overlays
             render(true);
             const link = document.createElement('a');
-            link.download = `butter_punch_${Date.now()}.png`;
+            link.download = `poto_punch_${Date.now()}.png`;
             link.href = mainCanvas.toDataURL('image/png');
             link.click();
             render();
@@ -601,6 +635,57 @@
                 redo();
             }
         });
+
+        // --- View Zoom (display-only: scales the on-screen canvas frame via CSS transform.
+        //     The <canvas> element's own width/height — and therefore the saved PNG — never change.) ---
+        const ZOOM_MIN = 0.2;
+        const ZOOM_MAX = 3;
+        const ZOOM_STEP = 0.1;
+
+        function applyZoom() {
+            canvasWrapper.style.transform = `scale(${state.viewZoom})`;
+            zoomValue.textContent = `${Math.round(state.viewZoom * 100)}%`;
+        }
+
+        function setZoom(nextZoom) {
+            state.viewZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, nextZoom));
+            applyZoom();
+        }
+
+        function zoomIn() { setZoom(state.viewZoom + ZOOM_STEP); }
+        function zoomOut() { setZoom(state.viewZoom - ZOOM_STEP); }
+        function resetZoom() { setZoom(1); }
+
+        canvasViewport.addEventListener('mouseenter', () => { state.isHoveringViewport = true; });
+        canvasViewport.addEventListener('mouseleave', () => { state.isHoveringViewport = false; });
+
+        // Ctrl + '+' / Ctrl + '-' (also Ctrl + '0' to reset) while hovering the image area
+        window.addEventListener('keydown', (e) => {
+            if (!state.isHoveringViewport) return;
+            if (!(e.ctrlKey || e.metaKey)) return;
+
+            if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key === '0') {
+                e.preventDefault();
+                resetZoom();
+            }
+        });
+
+        // Ctrl + scroll wheel is the more natural gesture for the same action
+        canvasViewport.addEventListener('wheel', (e) => {
+            if (!(e.ctrlKey || e.metaKey)) return;
+            e.preventDefault();
+            if (e.deltaY < 0) zoomIn();
+            else zoomOut();
+        }, { passive: false });
+
+        // Click the badge to snap back to 100%
+        zoomIndicator.addEventListener('click', resetZoom);
 
         // --- Shape Drawing Functions ---
         function drawShapePath(ctx, shape, radius) {
@@ -653,10 +738,10 @@
             // Scaled radius relative to punch size (15px -> 250px mapped to 5px -> 26px)
             const radius = ((state.punch.size - 15) / (250 - 15)) * 21 + 5;
 
-            miniCtx.fillStyle = '#5b6fe0';
+            miniCtx.fillStyle = '#718a7d';
             drawShapePath(miniCtx, state.punch.shape, radius);
             miniCtx.fill();
-            miniCtx.strokeStyle = '#3a4bc0';
+            miniCtx.strokeStyle = '#4f6358';
             miniCtx.lineWidth = 1.5;
             miniCtx.stroke();
             miniCtx.restore();
