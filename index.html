@@ -1,436 +1,1000 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>디코고치 - Decogochi</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>BUTTER PUNCH</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Nanum Myeongjo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Pretendard', sans-serif; }
-        .hide-scroll::-webkit-scrollbar { width: 4px; }
-        .hide-scroll::-webkit-scrollbar-track { background: transparent; }
-        .hide-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    </style>
-</head>
-<body class="bg-[#f8fafc]">
-    <div id="root"></div>
+        :root {
+            --surface: #fcfcfa;      /* base canvas / background */
+            --line: #9cb3f7;         /* signature periwinkle line color */
+            --accent: #5b6fe0;       /* saturated action / brand accent */
+            --accent-hover: #4a5cc9;
+            --accent-soft: #eef0fd;  /* light tint for panels & inputs */
+            --panel-border: #dbe0f5; /* soft neutral border, same hue family */
+            --ink: #1c2233;          /* primary text */
+            --ink-soft: #6b7280;     /* secondary text */
+            --danger: #e0455f;
+            --danger-soft: #fdedf0;
+            --danger-border: #f4c3cd;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', 'Batang', serif; }
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        // --- Icons (Fragment 대신 <> 축약형 사용으로 경량화) ---
-        const Icon = ({ name, size = 18, className = "" }) => {
-            const icons = {
-                Star: <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>,
-                Sparkles: <><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></>,
-                RotateCcw: <><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>,
-                Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-                Trash2: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>,
-                X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
-                LogIn: <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></>,
-                Share2: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></>
-            };
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    {icons[name]}
-                </svg>
-            );
-        };
-
-        // --- Helpers ---
-        const formatTime = (s) => `${Math.floor(s / 60)}:${s % 60 < 10 ? '0' : ''}${s % 60}`;
-
-        const hsvToHex = (h, s, v) => {
-            s /= 100; v /= 100;
-            let c = v * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = v - c;
-            let r = 0, g = 0, b = 0;
-            if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
-            else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
-            else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
-            return '#' + [r, g, b].map(n => Math.round((n + m) * 255).toString(16).padStart(2, '0')).join('');
-        };
-
-        // --- Data ---
-        const JUNIOR_DATA = [
-            { name: "갈대", body: "https://i.imgur.com/kkJcH4l.png", face: "https://i.imgur.com/7fAGnJj.png", faceRect: { x: 20.5, y: 16.5, w: 8.4, h: 10 } },
-            { name: "더치", body: "https://i.imgur.com/DA5yEFP.png", face: "https://i.imgur.com/22xba8J.png", faceRect: { x: 19.7, y: 23.6, w: 10, h: 6.7 } },
-            { name: "뫄식", body: "https://i.imgur.com/rulk05g.png", face: "https://i.imgur.com/eyfyIyH.png", faceRect: { x: 20.1, y: 22.3, w: 10.3, h: 7.1 } },
-            { name: "병태", body: "https://i.imgur.com/9ZVVixI.png", face: "https://i.imgur.com/TqC5aNb.png", faceRect: { x: 17.1, y: 21.8, w: 12.8, h: 11 } },
-            { name: "볼복", body: "https://i.imgur.com/na7UzhJ.png", face: "https://i.imgur.com/tVyxfZk.png", faceRect: { x: 19, y: 19.5, w: 13.6, h: 11.4 } },
-            { name: "쪽파", body: "https://i.imgur.com/5OtkS3n.png", face: "https://i.imgur.com/SFbRHRU.png", faceRect: { x: 18.9, y: 19.7, w: 12.6, h: 10.9 } },
-            { name: "빠다", body: "https://i.imgur.com/JdQLMSv.png", face: "https://i.imgur.com/r5qlEk4.png", faceRect: { x: 17.5, y: 17.7, w: 14.2, h: 8.3 } },
-            { name: "부엉", body: "https://i.imgur.com/VktaG9C.png", face: "https://i.imgur.com/qdbdWpP.png", faceRect: { x: 20.6, y: 21.7, w: 9.9, h: 7.8 } },
-            { name: "폼식", body: "https://i.imgur.com/JvRVLDP.png", face: "https://i.imgur.com/e3HdU6H.png", faceRect: { x: 16.3, y: 19, w: 16.9, h: 13.7 } }
-        ];
-
-        const ADULT_DATA = [
-            { name: "갈대", body: "https://i.imgur.com/0eJ7nlh.png", face: "https://i.imgur.com/Z3YOTF5.png", faceRect: { x: 1, y: 15.3, w: 16.9, h: 16.1 } },
-            { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/rYFBjCg.png", faceRect: { x: 9.3, y: 16.1, w: 28.4, h: 16.7 } },
-            { name: "뫄식", body: "https://i.imgur.com/r9ZNExr.png", face: "https://i.imgur.com/cOQ26r9.png", faceRect: { x: 15, y: 22.3, w: 16.9, h: 10.4 } },
-            { name: "병태", body: "https://i.imgur.com/yaBZRGJ.png", face: "https://i.imgur.com/x8TY17f.png", faceRect: { x: 12.5, y: 15, w: 22.1, h: 15 } },
-            { name: "볼복", body: "https://i.imgur.com/zMSAP6x.png", face: "https://i.imgur.com/wmA4ou0.png", faceRect: { x: 14.7, y: 13.1, w: 21.5, h: 17.2 } },
-            { name: "쪽파", body: "https://i.imgur.com/DO43l3O.png", face: "https://i.imgur.com/CNcjx5t.png", faceRect: { x: 18.7, y: 9.7, w: 13.4, h: 11.5 } },
-            { name: "빠다", body: "https://i.imgur.com/VSPomTp.png", face: "https://i.imgur.com/tbn0MA4.png", faceRect: { x: 14.9, y: 10.2, w: 22.5, h: 14.1 } },
-            { name: "부엉", body: "https://i.imgur.com/3wOR5DQ.png", face: "https://i.imgur.com/JqPL4kE.png", faceRect: { x: 10, y: 21.5, w: 25.1, h: 13.9 } },
-            { name: "폼식", body: "https://i.imgur.com/xNhFh58.png", face: "https://i.imgur.com/DZPqRtJ.png", faceRect: { x: 15.2, y: 19, w: 19.6, h: 14.2 } }
-        ];
-
-        // --- Components ---
-        const CharacterRenderer = ({ genes, stage, size = 200, id }) => {
-            if (!genes || genes.bodyIndex === undefined) return <div className="text-xs text-red-400">데이터 오류</div>;
-
-            if (stage === "egg") {
-                return (
-                    <div className="relative flex items-center justify-center animate-bounce duration-[2000ms]" style={{ width: size, height: size }}>
-                        <img src="https://i.imgur.com/WFsA2pQ.png" alt="Egg" className="w-[70%] h-[70%] object-contain drop-shadow-md" />
-                    </div>
-                );
-            }
-
-            const dataSet = stage === "baby" ? JUNIOR_DATA : ADULT_DATA;
-            const bodyData = dataSet[genes.bodyIndex] || dataSet[0];
-            const faceData = dataSet[genes.faceIndex] || dataSet[0];
-            const rect = bodyData.faceRect || { x: 10, y: 10, w: 30, h: 30 };
-            
-            const bodyColor = hsvToHex(genes.hue, stage === "baby" ? genes.saturation * 0.2 : genes.saturation * 0.5, 95);
-            const filterId = `multiply-filter-${id}-${stage}`;
-
-            return (
-                <div className="relative flex items-center justify-center transition-transform duration-500 hover:scale-110" style={{ width: size, height: size }}>
-                    <svg viewBox="0 0 50 50" className="w-full h-full drop-shadow-2xl overflow-visible">
-                        <defs>
-                            <filter id={filterId}>
-                                <feFlood floodColor={bodyColor} result="flood" />
-                                <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
-                                <feBlend in="colored" in2="SourceGraphic" mode="multiply" />
-                            </filter>
-                        </defs>
-                        <g filter={`url(#${filterId})`}>
-                            <image href={bodyData.body} width="50" height="50" preserveAspectRatio="xMidYMid meet" />
-                        </g>
-                        <image href={faceData.face} x={rect.x} y={rect.y} width={rect.w} height={rect.h} preserveAspectRatio="xMidYMid meet" />
-                    </svg>
-                </div>
-            );
-        };
-
-        function App() {
-            const [myMonster, setMyMonster] = useState(null);
-            const [partnerMonster, setPartnerMonster] = useState(null);
-            const [importText, setImportText] = useState("");
-            const [timeLeft, setTimeLeft] = useState(0);
-            const [timerType, setTimerType] = useState(null);
-            const [isNaming, setIsNaming] = useState(false);
-            const [tempName, setTempName] = useState("");
-            const [showResetConfirm, setShowResetConfirm] = useState(false);
-            const [hallOfFame, setHallOfFame] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('decogochi_hof')) || []; } 
-                catch { return []; }
-            });
-
-            useEffect(() => {
-                try {
-                    const savedMonster = JSON.parse(localStorage.getItem('decogochi_my_monster'));
-                    if (savedMonster) {
-                        setMyMonster(savedMonster);
-                    } else {
-                        const idx = Math.floor(Math.random() * ADULT_DATA.length);
-                        setMyMonster({
-                            name: ADULT_DATA[idx].name, stage: 'adult',
-                            genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
-                        });
-                    }
-
-                    const savedTimer = JSON.parse(localStorage.getItem('decogochi_timer'));
-                    if (savedTimer) {
-                        const diff = Math.max(0, Math.floor((savedTimer.endTime - Date.now()) / 1000));
-                        setTimerType(savedTimer.type);
-                        setTimeLeft(diff);
-                    }
-                } catch {
-                    handleReset();
-                }
-            }, []);
-
-            useEffect(() => {
-                if (myMonster) localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
-            }, [myMonster]);
-
-            useEffect(() => {
-                localStorage.setItem('decogochi_hof', JSON.stringify(hallOfFame));
-            }, [hallOfFame]);
-
-            useEffect(() => {
-                if (!timerType || timeLeft <= 0) return;
-                const timer = setInterval(() => setTimeLeft(prev => {
-                    if (prev <= 1) { localStorage.removeItem('decogochi_timer'); return 0; }
-                    return prev - 1;
-                }), 1000);
-                return () => clearInterval(timer);
-            }, [timerType, timeLeft]);
-
-            // 새로고침 대신 상태만 초기화하여 명예의 전당 보존 및 깜빡임 제거
-            const handleReset = () => { 
-                localStorage.removeItem('decogochi_my_monster');
-                localStorage.removeItem('decogochi_timer');
-                
-                const idx = Math.floor(Math.random() * ADULT_DATA.length);
-                setMyMonster({
-                    name: ADULT_DATA[idx].name, stage: 'adult',
-                    genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
-                });
-                
-                setTimerType(null);
-                setTimeLeft(0);
-                setPartnerMonster(null);
-                setShowResetConfirm(false);
-            };
-
-            const getExportCode = (monster) => {
-                const g = monster.genes;
-                const shortData = `${monster.name}|${g.bodyIndex}|${g.faceIndex}|${g.hue}|${g.saturation}`;
-                return btoa(unescape(encodeURIComponent(shortData)));
-            };
-
-            const copyCode = (code) => {
-                try {
-                    const tx = document.createElement("textarea");
-                    tx.value = code; document.body.appendChild(tx);
-                    tx.select(); document.execCommand('copy'); tx.remove();
-                } catch {}
-            };
-
-            const exportData = () => copyCode(getExportCode(myMonster));
-
-            const addToHoF = () => {
-                setHallOfFame(prev => [{ ...myMonster, id: Date.now() }, ...prev]);
-            };
-
-            const importData = () => {
-                try {
-                    if (!importText) return;
-                    const decoded = decodeURIComponent(escape(atob(importText)));
-                    
-                    if (decoded.includes('|')) { // 새 압축 포맷 파싱
-                        const p = decoded.split('|');
-                        setPartnerMonster({
-                            name: p[0], stage: 'adult',
-                            genes: { bodyIndex: +p[1], faceIndex: +p[2], hue: +p[3], saturation: +p[4] }
-                        });
-                        setImportText("");
-                    } else { // 기존 JSON 포맷 하위 호환
-                        const parsed = JSON.parse(decoded);
-                        if (parsed.stage === 'adult') { setPartnerMonster(parsed); setImportText(""); }
-                    }
-                } catch {}
-            };
-
-            const confirmBreeding = () => {
-                if (!tempName.trim()) return;
-                const duration = 300;
-                setMyMonster({ name: tempName, stage: 'egg', genes: myMonster.genes, parents: [myMonster.genes, partnerMonster.genes] });
-                setPartnerMonster(null); setTimerType('hatch'); setTimeLeft(duration);
-                localStorage.setItem('decogochi_timer', JSON.stringify({ endTime: Date.now() + duration * 1000, type: 'hatch' }));
-                setIsNaming(false); setTempName("");
-            };
-
-            const handleHatchOrGrow = () => {
-                setMyMonster(prev => {
-                    if (!prev || !prev.parents) return prev;
-                    const [p1, p2] = prev.parents;
-                    const isGrow = timerType === 'grow';
-                    const nextStage = isGrow ? 'adult' : 'baby';
-                    
-                    const r = Math.random();
-                    const genes = isGrow ? { ...prev.genes } : {
-                        bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
-                        faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
-                        hue: r < 0.3 ? p1.hue : r < 0.6 ? p2.hue : Math.floor(Math.random() * 360),
-                        saturation: 80
-                    };
-
-                    if (isGrow) {
-                        ['bodyIndex', 'faceIndex'].forEach(k => Math.random() > 0.5 && (genes[k] = Math.random() > 0.5 ? p1[k] : p2[k]));
-                        if (Math.random() < 0.3) genes.hue = Math.floor(Math.random() * 360);
-                        setTimerType(null); setTimeLeft(0); localStorage.removeItem('decogochi_timer');
-                    } else {
-                        const duration = 600;
-                        setTimerType('grow'); setTimeLeft(duration);
-                        localStorage.setItem('decogochi_timer', JSON.stringify({ endTime: Date.now() + duration * 1000, type: 'grow' }));
-                    }
-                    return { ...prev, stage: nextStage, genes };
-                });
-            };
-
-            if (!myMonster) return null;
-
-            return (
-                <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row items-center lg:items-start justify-center p-4 lg:p-8 gap-6 text-slate-900">
-                    
-                    {/* 명예의 전당 (좌측) */}
-                    <div className="w-full max-w-sm bg-white rounded-[3rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col lg:h-[700px]">
-                        <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 px-2">
-                            <Icon name="Star" className="text-amber-400 fill-current" /> 명예의 전당
-                        </h2>
-                        <div className="flex-1 overflow-y-auto hide-scroll pr-1 space-y-4">
-                            {hallOfFame.length === 0 ? (
-                                <p className="text-center text-slate-400 text-sm py-10 font-bold">등록된 외형이 없습니다.</p>
-                            ) : (
-                                hallOfFame.map(item => (
-                                    <div key={item.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-4 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
-                                        {/* 크게 키운 이미지 영역 */}
-                                        <div className="w-full h-40 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden">
-                                            <CharacterRenderer genes={item.genes} stage="adult" size={140} id={`hof-${item.id}`} />
-                                        </div>
-                                        {/* 이미지 아래 이름 및 공유/삭제 버튼 */}
-                                        <div className="flex justify-between items-center px-1">
-                                            <p className="font-bold text-slate-700 truncate text-lg flex-1 pr-2">{item.name}</p>
-                                            <div className="flex gap-2 shrink-0">
-                                                <button onClick={() => copyCode(getExportCode(item))} className="p-2.5 bg-white text-slate-400 hover:text-blue-500 shadow-sm rounded-xl transition-all active:scale-95">
-                                                    <Icon name="Share2" size={18} />
-                                                </button>
-                                                <button onClick={() => setHallOfFame(prev => prev.filter(h => h.id !== item.id))} className="p-2.5 bg-white text-slate-400 hover:text-rose-500 shadow-sm rounded-xl transition-all active:scale-95">
-                                                    <Icon name="Trash2" size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* 메인 화면 (우측) */}
-                    <div className="w-full max-w-sm bg-white rounded-[3rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 relative">
-                        {/* Top Bar */}
-                        <div className="flex justify-between items-center mb-6 px-2">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
-                                    <Icon name="Sparkles" size={16} className="text-white fill-current" />
-                                </div>
-                                <h1 className="text-xl font-black text-slate-800 tracking-tight">디코고치</h1>
-                            </div>
-                            <button onClick={() => setShowResetConfirm(true)} className="p-2 text-slate-300 hover:text-rose-400 transition-colors bg-slate-50 rounded-full">
-                                <Icon name="RotateCcw" size={18} />
-                            </button>
-                        </div>
-
-                        {/* Display Screen */}
-                        <div className="relative aspect-square bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center mb-6 border border-slate-100 shadow-inner overflow-hidden">
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                            
-                            <div className="mb-8">
-                                <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={240} />
-                            </div>
-                            
-                            <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1">
-                                <h2 className="text-xl font-black text-slate-800 tracking-tight">{myMonster.name}</h2>
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                        myMonster.stage === 'adult' ? 'bg-blue-100 text-blue-600' :
-                                        myMonster.stage === 'baby' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'
-                                    }`}>
-                                        {myMonster.stage}
-                                    </span>
-                                    {timerType && timeLeft > 0 && (
-                                        <div className="flex items-center gap-1 px-2.5 py-0.5 bg-slate-200 text-slate-600 rounded-full text-[9px] font-bold">
-                                            <Icon name="Clock" size={10} /> {formatTime(timeLeft)}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {timerType && timeLeft === 0 && (
-                                <button onClick={handleHatchOrGrow} className="absolute inset-0 bg-white/20 backdrop-blur-[2px] flex items-center justify-center transition-all group">
-                                    <div className="bg-blue-600 text-white font-black px-6 py-3 rounded-2xl shadow-xl transform group-hover:scale-105 active:scale-95 transition-all">
-                                        {timerType === 'hatch' ? '부화하기!' : '성장하기!'}
-                                    </div>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Actions Area */}
-                        <div className="space-y-3">
-                            {myMonster.stage === 'adult' && !timerType && (
-                                <>
-                                    {partnerMonster ? (
-                                        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex items-center gap-3 animate-in fade-in zoom-in">
-                                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden">
-                                                <CharacterRenderer genes={partnerMonster.genes} stage="adult" size={50} id="partner" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[10px] text-blue-500 font-bold uppercase leading-none mb-1">Partner</p>
-                                                <p className="font-bold text-slate-700 truncate text-sm">{partnerMonster.name}</p>
-                                            </div>
-                                            <div className="flex gap-1">
-                                                <button onClick={() => setPartnerMonster(null)} className="p-2 text-slate-400 hover:text-slate-600"><Icon name="X" size={18} /></button>
-                                                <button onClick={() => setIsNaming(true)} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-100 active:scale-90 transition-transform"><Icon name="Star" size={18} className="fill-current" /></button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex bg-slate-100 rounded-2xl p-1 items-center">
-                                            <input type="text" value={importText} onChange={e => setImportText(e.target.value)} placeholder="친구 코드를 입력하세요" className="flex-1 bg-transparent border-none px-4 py-3 text-sm focus:outline-none placeholder:text-slate-400 font-semibold" />
-                                            <button onClick={importData} className="bg-white text-slate-600 hover:text-blue-600 p-2.5 rounded-xl shadow-sm active:scale-95 transition-all"><Icon name="LogIn" size={18} /></button>
-                                        </div>
-                                    )}
-                                    <button onClick={exportData} className="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all">
-                                        <Icon name="Share2" size={16} /> 데이터 내보내기 (복사)
-                                    </button>
-                                    <button onClick={addToHoF} className="w-full bg-amber-50 hover:bg-amber-100 text-amber-600 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
-                                        <Icon name="Star" size={16} className="fill-current" /> 현재 외형 전당에 올리기
-                                    </button>
-                                </>
-                            )}
-
-                            {timerType && timeLeft > 0 && (
-                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-center">
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">{timerType === 'hatch' ? "Hatching Process" : "Growing Process"}</p>
-                                    <div className="text-2xl font-black text-blue-600 tabular-nums">{formatTime(timeLeft)}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Modals */}
-                    {showResetConfirm && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 z-50">
-                            <div className="bg-white w-full max-w-xs p-8 rounded-[2.5rem] shadow-2xl text-center">
-                                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-rose-500"><Icon name="Trash2" size={28} /></div>
-                                <h3 className="text-xl font-black text-slate-800 mb-2">데이터 초기화</h3>
-                                <p className="text-slate-500 text-sm mb-8 leading-relaxed">정말로 처음부터 다시<br/>시작하시겠습니까?</p>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setShowResetConfirm(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl text-xs font-black">취소</button>
-                                    <button onClick={handleReset} className="flex-1 bg-rose-500 text-white py-4 rounded-xl text-xs font-black shadow-lg shadow-rose-100">초기화</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {isNaming && (
-                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 z-50">
-                            <div className="bg-white w-full max-w-xs p-8 rounded-[2.5rem] shadow-2xl text-center border border-slate-100">
-                                <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-100">
-                                    <img src="https://i.imgur.com/WFsA2pQ.png" alt="New Egg" className="w-16 h-16 object-contain animate-pulse" />
-                                </div>
-                                <h3 className="text-xl font-black mb-6 text-slate-800">알의 이름 짓기</h3>
-                                <input autoFocus type="text" maxLength={10} value={tempName} onChange={e => setTempName(e.target.value)} className="w-full bg-slate-100 border-none rounded-xl px-4 py-4 text-center mb-6 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-lg" placeholder="이름 입력" />
-                                <div className="flex gap-2">
-                                    <button onClick={() => setIsNaming(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl text-xs font-black">취소</button>
-                                    <button onClick={confirmBreeding} className="flex-1 bg-blue-600 text-white py-4 rounded-xl text-xs font-black shadow-lg shadow-blue-100">알 만들기</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+        .canvas-bg {
+            background-color: var(--surface);
+            background-image:
+                linear-gradient(to right, rgba(156, 179, 247, 0.28) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(156, 179, 247, 0.28) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        /* Design Card & Container Specs */
+        .design-card {
+            background-color: var(--surface) !important;
+            border: 2px solid var(--line) !important;
+            border-radius: 10px !important;
+            box-shadow: 0 1px 2px rgba(28, 34, 51, 0.04) !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--line); }
+
+        /* Reusable component classes (kept in sync with JS class toggles) */
+        .btn-neutral {
+            background: var(--accent-soft);
+            border: 1px solid var(--panel-border);
+            color: var(--ink);
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .btn-neutral:hover:not(:disabled) { background: #e4e8fb; }
+        .btn-neutral:disabled { opacity: .4; }
+
+        .btn-primary {
+            background: var(--accent);
+            border: 2px solid var(--accent);
+            color: #ffffff;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+        .btn-danger-outline {
+            background: var(--danger-soft);
+            border: 1px solid var(--danger-border);
+            color: var(--danger);
+            transition: background-color .15s ease;
+        }
+        .btn-danger-outline:hover { background: #fbdde3; }
+
+        .field-box {
+            background: var(--accent-soft);
+            border: 1px solid var(--panel-border);
+            color: var(--ink);
+        }
+        .field-box:focus { outline: none; border-color: var(--line); }
+
+        .seg-btn {
+            border: 1px solid var(--panel-border);
+            background: var(--accent-soft);
+            color: var(--ink-soft);
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+        }
+        .seg-btn:hover { background: #e4e8fb; color: var(--ink); }
+        .seg-btn.active {
+            border: 2px solid var(--line);
+            background: var(--accent);
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .section-title { color: var(--ink); }
+        .section-title i { color: var(--accent); }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden select-none" style="background-color: var(--surface);">
+
+    <!-- Top Header Navigation -->
+    <header class="h-14 border-b-2 px-4 flex items-center justify-between z-20 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
+        <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-bold" style="background-color: var(--accent);">
+                <i class="fa-solid fa-hole-punch"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
+                BUTTER PUNCH
+            </h1>
+        </div>
+
+        <!-- Global Actions -->
+        <div class="flex items-center gap-2">
+            <button id="btnUndo" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-left text-xs"></i> 실행 취소
+            </button>
+            <button id="btnRedo" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-xs"></i> 다시 실행
+            </button>
+            <button id="btnClear" class="btn-danger-outline px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can text-xs"></i> 전체 초기화
+            </button>
+            <div class="h-4 w-[1px] mx-1" style="background-color: var(--panel-border);"></div>
+            <button id="btnDownload" class="btn-primary px-4 py-1.5 rounded-lg font-bold text-xs transition flex items-center gap-2">
+                <i class="fa-solid fa-download text-xs"></i> 이미지 저장
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Left Control Panel -->
+        <aside class="w-80 border-r-2 flex flex-col z-10 overflow-y-auto p-3 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
+
+            <div class="design-card p-3.5 space-y-4">
+
+                <!-- Image Upload Section -->
+                <section class="space-y-2 pb-4 border-b" style="border-color: var(--panel-border);">
+                    <h2 class="section-title text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-image"></i> 이미지 불러오기
+                    </h2>
+                    <label id="dropZone" class="group relative flex flex-col items-center justify-center h-20 rounded-lg cursor-pointer transition overflow-hidden" style="border: 2px dashed var(--line); background-color: var(--accent-soft);">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden" />
+                        <div class="flex flex-col items-center gap-1 transition" style="color: var(--ink-soft);">
+                            <i class="fa-solid fa-cloud-arrow-up text-lg mb-0.5" style="color: var(--accent);"></i>
+                            <span class="text-xs font-semibold" style="color: var(--ink);">클릭하거나 사진을 드래그하세요</span>
+                            <span class="text-[10px]">PNG, JPG, WEBP 지원</span>
+                        </div>
+                    </label>
+                </section>
+
+                <!-- Box Configuration Section -->
+                <section class="space-y-3 pb-4 border-b" style="border-color: var(--panel-border);">
+                    <h2 class="section-title text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-vector-square"></i> 박스 설정
+                    </h2>
+
+                    <!-- Box Color -->
+                    <div>
+                        <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">박스 색상</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="boxColorPicker" value="#5b6fe0" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                            <input type="text" id="boxColorHex" value="#5B6FE0" class="field-box flex-1 rounded-lg px-2.5 py-1 text-xs font-mono uppercase">
+                        </div>
+                    </div>
+
+                    <!-- Box Position -->
+                    <div>
+                        <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">붙일 위치</label>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button data-pos="left" class="pos-btn seg-btn py-1 rounded-lg text-xs font-semibold transition">좌</button>
+                            <button data-pos="right" class="pos-btn seg-btn active py-1 rounded-lg text-xs font-semibold transition">우</button>
+                            <button data-pos="top" class="pos-btn seg-btn py-1 rounded-lg text-xs font-semibold transition">상</button>
+                            <button data-pos="bottom" class="pos-btn seg-btn py-1 rounded-lg text-xs font-semibold transition">하</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Punching Tool Section -->
+                <section class="space-y-3 pb-4 border-b" style="border-color: var(--panel-border);">
+                    <div class="flex items-center justify-between">
+                        <h2 class="section-title text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-icons"></i> 펀칭기 도구
+                        </h2>
+                        <span class="text-[10px] font-normal" style="color: var(--ink-soft);">(우클릭 시 삭제)</span>
+                    </div>
+
+                    <!-- Shape Selector -->
+                    <div>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button data-shape="circle" title="동그라미" class="shape-btn seg-btn active py-1.5 rounded-lg flex items-center justify-center transition">
+                                <i class="fa-regular fa-circle text-sm"></i>
+                            </button>
+                            <button data-shape="square" title="네모" class="shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition">
+                                <i class="fa-regular fa-square text-sm"></i>
+                            </button>
+                            <button data-shape="triangle" title="정삼각형" class="shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition">
+                                <i class="fa-solid fa-play text-sm -rotate-90"></i>
+                            </button>
+                            <button data-shape="star" title="별" class="shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition">
+                                <i class="fa-regular fa-star text-sm"></i>
+                            </button>
+                            <button data-shape="urchin" title="성게/뾰족이" class="shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition">
+                                <i class="fa-solid fa-sun text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Size & Rotation Sliders -->
+                    <div class="space-y-2 p-2.5 rounded-lg" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1" style="color: var(--ink-soft);">
+                                <span>크기 (Size)</span>
+                                <span id="sizeVal" class="font-mono font-bold" style="color: var(--ink);">60px</span>
+                            </div>
+                            <input type="range" id="punchSize" min="15" max="250" value="60" class="w-full cursor-pointer" style="accent-color: var(--accent);">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1" style="color: var(--ink-soft);">
+                                <span>회전각 (Rotation)</span>
+                                <span id="rotVal" class="font-mono font-bold" style="color: var(--ink);">0°</span>
+                            </div>
+                            <input type="range" id="punchRot" min="0" max="360" value="0" class="w-full cursor-pointer" style="accent-color: var(--accent);">
+                        </div>
+                    </div>
+
+                    <!-- Mini Shape Live Preview Box -->
+                    <div>
+                        <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">미리보기</label>
+                        <div class="h-16 rounded-lg flex items-center justify-center relative overflow-hidden" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                            <canvas id="miniPreviewCanvas" width="100" height="60"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Text Tool Section -->
+                <section class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="section-title text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-font"></i> 글자 쓰기
+                        </h2>
+                        <span class="text-[10px] font-normal" style="color: var(--ink-soft);">(우클릭 시 수정가능)</span>
+                    </div>
+                    <div class="space-y-2">
+                        <input type="text" id="textInput" placeholder="문구를 입력하세요..." class="field-box font-myeongjo w-full rounded-lg px-2.5 py-1.5 text-xs placeholder-slate-400">
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="textColorPicker" value="#000000" class="w-8 h-8 rounded bg-transparent border-0 cursor-pointer">
+                            <input type="number" id="textSizeInput" value="32" min="10" max="200" class="field-box w-16 rounded-lg px-2 py-1 text-xs">
+                            <button id="btnAddText" class="btn-primary flex-1 rounded-lg py-1 text-xs font-bold transition">
+                                + 글자 추가
+                            </button>
+                        </div>
+                        <!-- Mini Text Live Preview Box -->
+                        <div>
+                            <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">미리보기</label>
+                            <div class="h-14 rounded-lg flex items-center justify-center relative overflow-hidden p-1" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                                <canvas id="textPreviewCanvas" width="220" height="45"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </aside>
+
+        <!-- Main Interactive Canvas Viewport -->
+        <main class="flex-1 canvas-bg relative overflow-auto flex items-center justify-center p-8">
+
+            <!-- Canvas Holder -->
+            <div id="canvasWrapper" class="relative rounded-lg overflow-hidden border-2 transition-all" style="border-color: var(--line); box-shadow: 0 4px 16px rgba(28, 34, 51, 0.06);">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+
+            <!-- Empty State Overlay (When no image is loaded) -->
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-xs z-10 pointer-events-none" style="background-color: rgba(252, 252, 250, 0.95);">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background-color: var(--accent-soft); border: 1px solid var(--panel-border);">
+                    <i class="fa-solid fa-image text-lg" style="color: var(--accent);"></i>
+                </div>
+                <h3 class="text-base font-bold mb-1" style="color: var(--ink);">사진을 불러와서 시작하세요</h3>
+                <p class="text-xs max-w-sm text-center" style="color: var(--ink-soft);">좌측 메뉴에서 사진을 업로드하면 자동으로 박스가 생성됩니다.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Text Edit Modal (Right-Click on Text) -->
+    <div id="textEditModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs" style="background-color: rgba(28, 34, 51, 0.4);">
+        <div class="design-card w-80 p-4 space-y-4" style="color: var(--ink);">
+            <div class="flex items-center justify-between border-b pb-2" style="border-color: var(--panel-border);">
+                <h3 class="text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square" style="color: var(--accent);"></i> 글자 수정 및 설정
+                </h3>
+                <button id="btnCloseModal" class="text-sm transition" style="color: var(--ink-soft);">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">문구 수정</label>
+                    <input type="text" id="modalTextContent" class="field-box font-myeongjo w-full rounded-lg px-2.5 py-1.5 text-xs">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">글자 크기 (px)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="range" id="modalTextSizeSlider" min="10" max="200" class="flex-1 cursor-pointer" style="accent-color: var(--accent);">
+                        <input type="number" id="modalTextSizeNum" min="10" max="200" class="field-box w-16 rounded-lg px-2 py-1 text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">글자 색상</label>
+                    <input type="color" id="modalTextColor" class="w-full h-8 rounded bg-transparent border-0 cursor-pointer">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t" style="border-color: var(--panel-border);">
+                <button id="btnDeleteModalText" class="btn-danger-outline px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                    삭제
+                </button>
+                <button id="btnSaveModalText" class="btn-primary px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                    적용하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            image: null,           // HTMLImageElement
+            imageWidth: 0,
+            imageHeight: 0,
+            boxColor: '#5b6fe0',
+            boxPosition: 'right',  // 'right' | 'left' | 'top' | 'bottom'
+            punch: {
+                shape: 'circle',   // 'circle', 'square', 'triangle', 'star', 'urchin'
+                size: 60,
+                rotation: 0
+            },
+            punches: [],           // [{ id, relativeX, relativeY, shape, size, rotation }]
+            texts: [],             // [{ id, x, y, content, color, size }]
+            history: [],           // Undo stack
+            redoStack: [],         // Redo stack
+            selectedTextIndex: -1, // Currently dragged text index
+            isDraggingText: false,
+            dragOffset: { x: 0, y: 0 },
+            mousePos: { x: 0, y: 0 },
+            isHoveringCanvas: false,
+            editingTextIndex: -1
+        };
+
+        // --- DOM Elements ---
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+        const miniPreviewCanvas = document.getElementById('miniPreviewCanvas');
+        const miniCtx = miniPreviewCanvas.getContext('2d');
+        const textPreviewCanvas = document.getElementById('textPreviewCanvas');
+        const textPreviewCtx = textPreviewCanvas.getContext('2d');
+
+        const emptyState = document.getElementById('emptyState');
+        const imageInput = document.getElementById('imageInput');
+        const dropZone = document.getElementById('dropZone');
+
+        const boxColorPicker = document.getElementById('boxColorPicker');
+        const boxColorHex = document.getElementById('boxColorHex');
+
+        const punchSize = document.getElementById('punchSize');
+        const punchRot = document.getElementById('punchRot');
+        const sizeVal = document.getElementById('sizeVal');
+        const rotVal = document.getElementById('rotVal');
+
+        const textInput = document.getElementById('textInput');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const textSizeInput = document.getElementById('textSizeInput');
+        const btnAddText = document.getElementById('btnAddText');
+
+        const btnUndo = document.getElementById('btnUndo');
+        const btnRedo = document.getElementById('btnRedo');
+        const btnClear = document.getElementById('btnClear');
+        const btnDownload = document.getElementById('btnDownload');
+
+        // Modal Elements
+        const textEditModal = document.getElementById('textEditModal');
+        const modalTextContent = document.getElementById('modalTextContent');
+        const modalTextSizeSlider = document.getElementById('modalTextSizeSlider');
+        const modalTextSizeNum = document.getElementById('modalTextSizeNum');
+        const modalTextColor = document.getElementById('modalTextColor');
+        const btnCloseModal = document.getElementById('btnCloseModal');
+        const btnDeleteModalText = document.getElementById('btnDeleteModalText');
+        const btnSaveModalText = document.getElementById('btnSaveModalText');
+
+        // Shared class strings so JS-driven state toggles stay visually consistent
+        const POS_BTN_BASE = 'pos-btn seg-btn py-1 rounded-lg text-xs font-semibold transition';
+        const POS_BTN_ACTIVE = 'pos-btn seg-btn active py-1 rounded-lg text-xs font-semibold transition';
+        const SHAPE_BTN_BASE = 'shape-btn seg-btn py-1.5 rounded-lg flex items-center justify-center transition';
+        const SHAPE_BTN_ACTIVE = 'shape-btn seg-btn active py-1.5 rounded-lg flex items-center justify-center transition';
+
+        // --- History Management ---
+        function saveHistory() {
+            const snap = {
+                boxColor: state.boxColor,
+                boxPosition: state.boxPosition,
+                punches: JSON.parse(JSON.stringify(state.punches)),
+                texts: JSON.parse(JSON.stringify(state.texts))
+            };
+            state.history.push(snap);
+            state.redoStack = [];
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            btnUndo.disabled = state.history.length <= 1;
+            btnRedo.disabled = state.redoStack.length === 0;
+        }
+
+        function undo() {
+            if (state.history.length > 1) {
+                const current = state.history.pop();
+                state.redoStack.push(current);
+                const prev = state.history[state.history.length - 1];
+                applySnapshot(prev);
+                updateUndoRedoButtons();
+                render();
+            }
+        }
+
+        function redo() {
+            if (state.redoStack.length > 0) {
+                const next = state.redoStack.pop();
+                state.history.push(next);
+                applySnapshot(next);
+                updateUndoRedoButtons();
+                render();
+            }
+        }
+
+        function applySnapshot(snap) {
+            state.boxColor = snap.boxColor;
+            state.boxPosition = snap.boxPosition;
+            state.punches = JSON.parse(JSON.stringify(snap.punches));
+            state.texts = JSON.parse(JSON.stringify(snap.texts));
+
+            boxColorPicker.value = state.boxColor;
+            boxColorHex.value = state.boxColor;
+            document.querySelectorAll('.pos-btn').forEach(b => {
+                b.className = (b.dataset.pos === state.boxPosition) ? POS_BTN_ACTIVE : POS_BTN_BASE;
+            });
+        }
+
+        // --- Image Loading ---
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImageFromFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadImageFromFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function loadImageFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    state.imageWidth = img.width;
+                    state.imageHeight = img.height;
+                    state.punches = [];
+                    state.texts = [];
+                    state.history = [];
+                    state.redoStack = [];
+                    emptyState.style.display = 'none';
+                    saveHistory();
+                    render();
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- Control Listeners ---
+        boxColorPicker.addEventListener('input', (e) => {
+            state.boxColor = e.target.value;
+            boxColorHex.value = e.target.value;
+            render();
+        });
+        boxColorPicker.addEventListener('change', () => saveHistory());
+
+        boxColorHex.addEventListener('change', (e) => {
+            let val = e.target.value;
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                state.boxColor = val;
+                boxColorPicker.value = val;
+                saveHistory();
+                render();
+            }
+        });
+
+        document.querySelectorAll('.pos-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pos-btn').forEach(b => { b.className = POS_BTN_BASE; });
+                btn.className = POS_BTN_ACTIVE;
+                state.boxPosition = btn.dataset.pos;
+                saveHistory();
+                render();
+            });
+        });
+
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.shape-btn').forEach(b => { b.className = SHAPE_BTN_BASE; });
+                btn.className = SHAPE_BTN_ACTIVE;
+                state.punch.shape = btn.dataset.shape;
+                renderMiniPreview();
+                render();
+            });
+        });
+
+        punchSize.addEventListener('input', (e) => {
+            state.punch.size = parseInt(e.target.value);
+            sizeVal.textContent = `${state.punch.size}px`;
+            renderMiniPreview();
+            render();
+        });
+
+        punchRot.addEventListener('input', (e) => {
+            state.punch.rotation = parseInt(e.target.value);
+            rotVal.textContent = `${state.punch.rotation}°`;
+            renderMiniPreview();
+            render();
+        });
+
+        // Text Live Inputs
+        textInput.addEventListener('input', renderTextPreview);
+        textColorPicker.addEventListener('input', renderTextPreview);
+        textSizeInput.addEventListener('input', renderTextPreview);
+
+        btnAddText.addEventListener('click', () => {
+            const content = textInput.value.trim();
+            if (!content || !state.image) return;
+
+            // Add centered in current total layout
+            const layout = getLayout();
+            state.texts.push({
+                id: Date.now(),
+                x: layout.totalWidth / 2,
+                y: layout.totalHeight / 2,
+                content: content,
+                color: textColorPicker.value,
+                size: parseInt(textSizeInput.value) || 32
+            });
+            textInput.value = '';
+            renderTextPreview();
+            saveHistory();
+            render();
+        });
+
+        // Top Actions
+        btnUndo.addEventListener('click', undo);
+        btnRedo.addEventListener('click', redo);
+        btnClear.addEventListener('click', () => {
+            if (!state.image) return;
+            state.punches = [];
+            state.texts = [];
+            saveHistory();
+            render();
+        });
+
+        btnDownload.addEventListener('click', () => {
+            if (!state.image) return;
+            // Render clean version without hover overlays
+            render(true);
+            const link = document.createElement('a');
+            link.download = `butter_punch_${Date.now()}.png`;
+            link.href = mainCanvas.toDataURL('image/png');
+            link.click();
+            render();
+        });
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                redo();
+            }
+        });
+
+        // --- Shape Drawing Functions ---
+        function drawShapePath(ctx, shape, radius) {
+            ctx.beginPath();
+            if (shape === 'circle') {
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            } else if (shape === 'square') {
+                ctx.rect(-radius, -radius, radius * 2, radius * 2);
+            } else if (shape === 'triangle') {
+                // Equilateral Triangle
+                ctx.moveTo(0, -radius);
+                ctx.lineTo(radius * (Math.sqrt(3) / 2), radius / 2);
+                ctx.lineTo(-radius * (Math.sqrt(3) / 2), radius / 2);
+                ctx.closePath();
+            } else if (shape === 'star') {
+                const points = 5;
+                const innerRadius = radius * 0.4;
+                for (let i = 0; i < points * 2; i++) {
+                    const r = (i % 2 === 0) ? radius : innerRadius;
+                    const angle = (i * Math.PI) / points - Math.PI / 2;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+            } else if (shape === 'urchin') {
+                // Spiky Urchin / Sun Shape
+                const points = 16;
+                const innerRadius = radius * 0.65;
+                for (let i = 0; i < points * 2; i++) {
+                    const r = (i % 2 === 0) ? radius : innerRadius;
+                    const angle = (i * Math.PI) / points;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+            }
+        }
+
+        // --- Mini Live Previews ---
+        function renderMiniPreview() {
+            miniCtx.clearRect(0, 0, miniPreviewCanvas.width, miniPreviewCanvas.height);
+            miniCtx.save();
+            miniCtx.translate(miniPreviewCanvas.width / 2, miniPreviewCanvas.height / 2);
+            miniCtx.rotate((state.punch.rotation * Math.PI) / 180);
+
+            // Scaled radius relative to punch size (15px -> 250px mapped to 5px -> 26px)
+            const radius = ((state.punch.size - 15) / (250 - 15)) * 21 + 5;
+
+            miniCtx.fillStyle = '#5b6fe0';
+            drawShapePath(miniCtx, state.punch.shape, radius);
+            miniCtx.fill();
+            miniCtx.strokeStyle = '#3a4bc0';
+            miniCtx.lineWidth = 1.5;
+            miniCtx.stroke();
+            miniCtx.restore();
+        }
+
+        function renderTextPreview() {
+            textPreviewCtx.clearRect(0, 0, textPreviewCanvas.width, textPreviewCanvas.height);
+            const textVal = textInput.value.trim() || '미리보기 문구';
+            const sizeVal = parseInt(textSizeInput.value) || 32;
+            const colorVal = textColorPicker.value;
+
+            textPreviewCtx.save();
+            // Dynamically scale text size in preview box
+            const scaleFactor = Math.min(Math.max(sizeVal / 32, 0.4), 2.2);
+            const previewFontSize = Math.round(18 * scaleFactor);
+
+            textPreviewCtx.font = `bold ${previewFontSize}px 'Nanum Myeongjo', 'Batang', serif`;
+            textPreviewCtx.fillStyle = colorVal;
+            textPreviewCtx.textAlign = 'center';
+            textPreviewCtx.textBaseline = 'middle';
+
+            textPreviewCtx.fillText(textVal, textPreviewCanvas.width / 2, textPreviewCanvas.height / 2);
+            textPreviewCtx.restore();
+        }
+
+        // --- Layout Helper ---
+        function getLayout() {
+            const w = state.imageWidth;
+            const h = state.imageHeight;
+            let imgX = 0, imgY = 0, boxX = 0, boxY = 0;
+            let totalWidth = w, totalHeight = h;
+
+            if (state.boxPosition === 'right') {
+                boxX = w;
+                totalWidth = w * 2;
+            } else if (state.boxPosition === 'left') {
+                imgX = w;
+                totalWidth = w * 2;
+            } else if (state.boxPosition === 'bottom') {
+                boxY = h;
+                totalHeight = h * 2;
+            } else if (state.boxPosition === 'top') {
+                imgY = h;
+                totalHeight = h * 2;
+            }
+
+            return { w, h, imgX, imgY, boxX, boxY, totalWidth, totalHeight };
+        }
+
+        // --- Main Canvas Render Loop ---
+        function render(isExport = false) {
+            if (!state.image) return;
+
+            const layout = getLayout();
+            mainCanvas.width = layout.totalWidth;
+            mainCanvas.height = layout.totalHeight;
+
+            // 1. Draw Solid Colored Adjacent Box
+            ctx.fillStyle = state.boxColor;
+            ctx.fillRect(layout.boxX, layout.boxY, layout.w, layout.h);
+
+            // 2. Draw Original Base Image
+            ctx.drawImage(state.image, layout.imgX, layout.imgY, layout.w, layout.h);
+
+            // 3. Render All Punch Operations
+            state.punches.forEach(p => {
+                const radius = p.size / 2;
+                const rotRad = (p.rotation * Math.PI) / 180;
+
+                // 3-1: Fill hole on Image with Box Color
+                ctx.save();
+                ctx.translate(layout.imgX + p.relativeX, layout.imgY + p.relativeY);
+                ctx.rotate(rotRad);
+                drawShapePath(ctx, p.shape, radius);
+                ctx.fillStyle = state.boxColor;
+                ctx.fill();
+                ctx.restore();
+
+                // 3-2: Cut hole on Box & Transfer exact Image Slice onto Box
+                ctx.save();
+                ctx.translate(layout.boxX + p.relativeX, layout.boxY + p.relativeY);
+                ctx.rotate(rotRad);
+                drawShapePath(ctx, p.shape, radius);
+                ctx.clip(); // Clip slice shape
+
+                // Draw matching section of image inside clip
+                ctx.drawImage(
+                    state.image,
+                    0, 0, layout.w, layout.h,
+                    -p.relativeX, -p.relativeY, layout.w, layout.h
+                );
+                ctx.restore();
+            });
+
+            // 4. Render All Text Elements (Nanum Myeongjo, No harsh drop shadow)
+            state.texts.forEach(t => {
+                ctx.save();
+                ctx.font = `bold ${t.size}px 'Nanum Myeongjo', 'Batang', serif`;
+                ctx.fillStyle = t.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                ctx.fillText(t.content, t.x, t.y);
+                ctx.restore();
+            });
+
+            // 5. Draw Punch Hover Cursor Overlay (When hovering image area)
+            if (!isExport && state.isHoveringCanvas) {
+                const rel = getRelativeImageCoords(state.mousePos.x, state.mousePos.y);
+                if (rel) {
+                    ctx.save();
+                    ctx.translate(layout.imgX + rel.x, layout.imgY + rel.y);
+                    ctx.rotate((state.punch.rotation * Math.PI) / 180);
+                    drawShapePath(ctx, state.punch.shape, state.punch.size / 2);
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#1c2233';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        // --- Mouse Interaction & Coordinates ---
+        function getCanvasMousePos(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function getRelativeImageCoords(cx, cy) {
+            const layout = getLayout();
+            if (
+                cx >= layout.imgX && cx <= layout.imgX + layout.w &&
+                cy >= layout.imgY && cy <= layout.imgY + layout.h
+            ) {
+                return { x: cx - layout.imgX, y: cy - layout.imgY };
+            }
+            return null;
+        }
+
+        function getTextAtPos(cx, cy) {
+            ctx.save();
+            for (let i = state.texts.length - 1; i >= 0; i--) {
+                const t = state.texts[i];
+                ctx.font = `bold ${t.size}px 'Nanum Myeongjo', 'Batang', serif`;
+                const metrics = ctx.measureText(t.content);
+                const w = metrics.width;
+                const h = t.size;
+
+                if (
+                    cx >= t.x - w / 2 - 8 && cx <= t.x + w / 2 + 8 &&
+                    cy >= t.y - h / 2 - 8 && cy <= t.y + h / 2 + 8
+                ) {
+                    ctx.restore();
+                    return i;
+                }
+            }
+            ctx.restore();
+            return -1;
+        }
+
+        function getPunchAtPos(cx, cy) {
+            const layout = getLayout();
+            let rel = null;
+
+            // Check if click was on image area
+            if (cx >= layout.imgX && cx <= layout.imgX + layout.w && cy >= layout.imgY && cy <= layout.imgY + layout.h) {
+                rel = { x: cx - layout.imgX, y: cy - layout.imgY };
+            }
+            // Check if click was on box area
+            else if (cx >= layout.boxX && cx <= layout.boxX + layout.w && cy >= layout.boxY && cy <= layout.boxY + layout.h) {
+                rel = { x: cx - layout.boxX, y: cy - layout.boxY };
+            }
+
+            if (!rel) return -1;
+
+            // Check punches in reverse (topmost first)
+            for (let i = state.punches.length - 1; i >= 0; i--) {
+                const p = state.punches[i];
+                const dx = rel.x - p.relativeX;
+                const dy = rel.y - p.relativeY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= p.size / 2) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // --- Canvas Event Listeners ---
+        mainCanvas.addEventListener('mouseenter', () => { state.isHoveringCanvas = true; });
+        mainCanvas.addEventListener('mouseleave', () => {
+            state.isHoveringCanvas = false;
+            state.isDraggingText = false;
+            render();
+        });
+
+        mainCanvas.addEventListener('mousemove', (e) => {
+            const pos = getCanvasMousePos(e);
+            state.mousePos = pos;
+
+            if (state.isDraggingText && state.selectedTextIndex !== -1) {
+                state.texts[state.selectedTextIndex].x = pos.x - state.dragOffset.x;
+                state.texts[state.selectedTextIndex].y = pos.y - state.dragOffset.y;
+                render();
+                return;
+            }
+
+            render();
+        });
+
+        mainCanvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Left click only
+            const pos = getCanvasMousePos(e);
+
+            // 1. Check if clicking on existing text to drag
+            const textIdx = getTextAtPos(pos.x, pos.y);
+            if (textIdx !== -1) {
+                state.selectedTextIndex = textIdx;
+                state.isDraggingText = true;
+                state.dragOffset = {
+                    x: pos.x - state.texts[textIdx].x,
+                    y: pos.y - state.texts[textIdx].y
+                };
+                return;
+            }
+
+            // 2. Perform Punch if clicked on Image
+            const rel = getRelativeImageCoords(pos.x, pos.y);
+            if (rel) {
+                state.punches.push({
+                    id: Date.now(),
+                    relativeX: rel.x,
+                    relativeY: rel.y,
+                    shape: state.punch.shape,
+                    size: state.punch.size,
+                    rotation: state.punch.rotation
+                });
+                saveHistory();
+                render();
+            }
+        });
+
+        mainCanvas.addEventListener('mouseup', (e) => {
+            if (e.button === 0 && state.isDraggingText) {
+                state.isDraggingText = false;
+                saveHistory();
+            }
+        });
+
+        // Context Menu (Right Click Delete or Edit)
+        mainCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const pos = getCanvasMousePos(e);
+
+            // 1. Right Click on Text -> Open Edit Modal
+            const textIdx = getTextAtPos(pos.x, pos.y);
+            if (textIdx !== -1) {
+                openTextEditModal(textIdx);
+                return;
+            }
+
+            // 2. Right Click on Punch -> Delete Punch
+            const punchIdx = getPunchAtPos(pos.x, pos.y);
+            if (punchIdx !== -1) {
+                state.punches.splice(punchIdx, 1);
+                saveHistory();
+                render();
+            }
+        });
+
+        // --- Text Edit Modal Functionality ---
+        function openTextEditModal(index) {
+            state.editingTextIndex = index;
+            const t = state.texts[index];
+
+            modalTextContent.value = t.content;
+            modalTextSizeSlider.value = t.size;
+            modalTextSizeNum.value = t.size;
+            modalTextColor.value = t.color;
+
+            textEditModal.classList.remove('hidden');
+        }
+
+        function closeTextEditModal() {
+            textEditModal.classList.add('hidden');
+            state.editingTextIndex = -1;
+        }
+
+        modalTextSizeSlider.addEventListener('input', (e) => {
+            modalTextSizeNum.value = e.target.value;
+        });
+
+        modalTextSizeNum.addEventListener('input', (e) => {
+            modalTextSizeSlider.value = e.target.value;
+        });
+
+        btnCloseModal.addEventListener('click', closeTextEditModal);
+
+        btnDeleteModalText.addEventListener('click', () => {
+            if (state.editingTextIndex !== -1) {
+                state.texts.splice(state.editingTextIndex, 1);
+                closeTextEditModal();
+                saveHistory();
+                render();
+            }
+        });
+
+        btnSaveModalText.addEventListener('click', () => {
+            if (state.editingTextIndex !== -1) {
+                const content = modalTextContent.value.trim();
+                if (content) {
+                    state.texts[state.editingTextIndex].content = content;
+                    state.texts[state.editingTextIndex].size = parseInt(modalTextSizeNum.value) || 32;
+                    state.texts[state.editingTextIndex].color = modalTextColor.value;
+                    closeTextEditModal();
+                    saveHistory();
+                    render();
+                }
+            }
+        });
+
+        // --- Init Previews ---
+        renderMiniPreview();
+        renderTextPreview();
     </script>
 </body>
 </html>
