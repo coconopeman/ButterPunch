@@ -108,20 +108,19 @@
         /* View-only zoom (does not affect exported image resolution) */
         #canvasWrapper { transform-origin: center center; }
         #zoomIndicator {
-            position: absolute;
-            right: 14px;
-            bottom: 14px;
+            appearance: none;
+            display: inline-flex;
+            align-items: center;
             background: var(--surface);
             border: 1px solid var(--panel-border);
             color: var(--ink-soft);
             font-size: 11px;
             font-weight: 600;
-            padding: 4px 10px;
+            padding: 3px 10px;
             border-radius: 999px;
-            box-shadow: 0 1px 4px rgba(28, 34, 51, 0.08);
             cursor: pointer;
             user-select: none;
-            z-index: 15;
+            font-family: inherit;
         }
         #zoomIndicator:hover { border-color: var(--line); color: var(--ink); }
     </style>
@@ -137,6 +136,9 @@
             <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
                 BUTTER PUNCH!
             </h1>
+            <button id="zoomIndicator" type="button" title="캔버스 위에서 Ctrl + 스크롤 또는 Ctrl + / - 로 화면 확대·축소 (클릭 시 100%로 초기화)">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomValue">100%</span>
+            </button>
         </div>
 
         <!-- Global Actions -->
@@ -333,11 +335,6 @@
                 </div>
                 <h3 class="text-base font-bold mb-1" style="color: var(--ink);">사진을 불러와서 시작하세요</h3>
                 <p class="text-xs max-w-sm text-center" style="color: var(--ink-soft);">좌측 메뉴에서 사진을 업로드하면 자동으로 박스가 생성됩니다.</p>
-            </div>
-
-            <!-- View Zoom Indicator (display-only scale; does not affect saved image size) -->
-            <div id="zoomIndicator" title="캔버스 위에서 Ctrl + 스크롤 또는 Ctrl + / - 로 화면 확대·축소 (클릭 시 100%로 초기화)">
-                <i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomValue">100%</span>
             </div>
         </main>
     </div>
