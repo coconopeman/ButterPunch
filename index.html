@@ -2,7 +2,7 @@
 <html lang="ko" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUTTER PUNCH!</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -125,48 +125,56 @@
         #zoomIndicator:hover { border-color: var(--line); color: var(--ink); }
     </style>
 </head>
-<body class="h-full flex flex-col overflow-hidden select-none" style="background-color: var(--surface);">
+<body class="h-full flex flex-col overflow-y-auto md:overflow-hidden select-none" style="background-color: var(--surface);">
 
     <!-- Top Header Navigation -->
-    <header class="h-14 border-b-2 px-4 flex items-center justify-between z-20 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
-        <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold" style="background-color: var(--surface); border: 2px solid var(--accent); color: var(--accent);">
+    <header class="border-b-2 px-3 sm:px-4 py-2 md:py-0 md:h-14 flex flex-wrap md:flex-nowrap items-center justify-between gap-x-3 gap-y-2 z-20 shrink-0 sticky top-0" style="border-color: var(--line); background-color: var(--surface);">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+            <div class="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0" style="background-color: var(--surface); border: 2px solid var(--accent); color: var(--accent);">
                 <i class="fa-solid fa-hole-punch"></i>
             </div>
-            <h1 class="font-bold text-lg tracking-wide" style="color: var(--ink);">
+            <h1 class="font-bold text-base sm:text-lg tracking-wide whitespace-nowrap" style="color: var(--ink);">
                 BUTTER PUNCH!
             </h1>
-            <button id="zoomIndicator" type="button" title="캔버스 위에서 Ctrl + 스크롤 또는 Ctrl + / - 로 화면 확대·축소 (클릭 시 100%로 초기화)">
-                <i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomValue">100%</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button id="btnZoomOut" type="button" class="btn-neutral w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center transition" title="축소 (Ctrl + -)">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <button id="zoomIndicator" type="button" title="캔버스 위에서 두 손가락으로 확대·축소, 또는 Ctrl + 스크롤 / Ctrl + / - (클릭 시 100%로 초기화)">
+                    <i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomValue">100%</span>
+                </button>
+                <button id="btnZoomIn" type="button" class="btn-neutral w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center transition" title="확대 (Ctrl + +)">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Global Actions -->
-        <div class="flex items-center gap-2">
-            <button id="btnUndo" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                <i class="fa-solid fa-rotate-left text-xs"></i> 실행 취소
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <button id="btnUndo" disabled class="btn-neutral px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-left text-xs"></i><span class="hidden sm:inline">실행 취소</span>
             </button>
-            <button id="btnRedo" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                <i class="fa-solid fa-rotate-right text-xs"></i> 다시 실행
+            <button id="btnRedo" disabled class="btn-neutral px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-xs"></i><span class="hidden sm:inline">다시 실행</span>
             </button>
-            <button id="btnAlign" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="펀칭된 조각들을 격자로 가운데 정렬해요">
-                <i class="fa-solid fa-table-cells text-xs"></i> 정렬
+            <button id="btnAlign" disabled class="btn-neutral px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="펀칭된 조각들을 격자로 가운데 정렬해요">
+                <i class="fa-solid fa-table-cells text-xs"></i><span class="hidden sm:inline">정렬</span>
             </button>
-            <button id="btnClear" class="btn-danger-outline px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                <i class="fa-solid fa-trash-can text-xs"></i> 전체 초기화
+            <button id="btnClear" class="btn-danger-outline px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can text-xs"></i><span class="hidden sm:inline">전체 초기화</span>
             </button>
-            <div class="h-4 w-[1px] mx-1" style="background-color: var(--panel-border);"></div>
-            <button id="btnDownload" class="btn-primary px-4 py-1.5 rounded-lg font-bold text-xs transition flex items-center gap-2">
-                <i class="fa-solid fa-download text-xs"></i> 이미지 저장
+            <div class="hidden sm:block h-4 w-[1px] mx-1" style="background-color: var(--panel-border);"></div>
+            <button id="btnDownload" class="btn-primary px-3 sm:px-4 py-1.5 rounded-lg font-bold text-xs transition flex items-center gap-2">
+                <i class="fa-solid fa-download text-xs"></i><span class="hidden sm:inline">이미지 저장</span>
             </button>
         </div>
     </header>
 
     <!-- Main Workspace -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row overflow-visible md:overflow-hidden">
 
-        <!-- Left Control Panel -->
-        <aside class="w-80 border-r-2 flex flex-col z-10 overflow-y-auto p-3 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
+        <!-- Left Control Panel: shown below the canvas on phones (order-2), beside it on larger screens -->
+        <aside class="order-2 md:order-1 w-full md:w-80 border-t-2 md:border-t-0 md:border-r-2 flex flex-col z-10 overflow-visible md:overflow-y-auto p-3 shrink-0" style="border-color: var(--line); background-color: var(--surface);">
 
             <div class="design-card p-3.5 space-y-4">
 
@@ -324,7 +332,7 @@
         </aside>
 
         <!-- Main Interactive Canvas Viewport -->
-        <main id="canvasViewport" class="flex-1 canvas-bg relative overflow-auto flex p-8">
+        <main id="canvasViewport" class="order-1 md:order-2 md:flex-1 h-[60vh] md:h-auto canvas-bg relative overflow-auto flex p-4 sm:p-8" style="touch-action: pan-x pan-y;">
 
             <!-- Canvas Holder -->
             <div id="canvasWrapper" class="relative rounded-lg overflow-hidden border-2 transition-all" style="border-color: var(--line); box-shadow: 0 4px 16px rgba(28, 34, 51, 0.06); margin: auto; flex-shrink: 0;">
@@ -344,7 +352,7 @@
 
     <!-- Text Edit Modal (Right-Click on Text) -->
     <div id="textEditModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs" style="background-color: rgba(28, 34, 51, 0.4);">
-        <div class="design-card w-80 p-4 space-y-4" style="color: var(--ink);">
+        <div class="design-card w-80 max-w-[90vw] p-4 space-y-4" style="color: var(--ink);">
             <div class="flex items-center justify-between border-b pb-2" style="border-color: var(--panel-border);">
                 <h3 class="text-sm font-bold flex items-center gap-2">
                     <i class="fa-solid fa-pen-to-square" style="color: var(--accent);"></i> 글자 수정 및 설정
@@ -387,7 +395,7 @@
 
     <!-- Align Punches Modal -->
     <div id="alignModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs" style="background-color: rgba(28, 34, 51, 0.4);">
-        <div class="design-card w-72 p-4 space-y-4" style="color: var(--ink);">
+        <div class="design-card w-72 max-w-[90vw] p-4 space-y-4" style="color: var(--ink);">
             <div class="flex items-center justify-between border-b pb-2" style="border-color: var(--panel-border);">
                 <h3 class="text-sm font-bold flex items-center gap-2">
                     <i class="fa-solid fa-table-cells" style="color: var(--accent);"></i> 펀칭 정렬
@@ -507,6 +515,8 @@
         const canvasWrapper = document.getElementById('canvasWrapper');
         const zoomIndicator = document.getElementById('zoomIndicator');
         const zoomValue = document.getElementById('zoomValue');
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        const btnZoomOut = document.getElementById('btnZoomOut');
 
         // Modal Elements
         const textEditModal = document.getElementById('textEditModal');
@@ -650,43 +660,69 @@
             }
         });
 
-        function loadImageFromFile(file) {
+        function finishImageLoad(normalizedCanvas) {
+            state.image = normalizedCanvas;
+            state.imageWidth = normalizedCanvas.width;
+            state.imageHeight = normalizedCanvas.height;
+            state.punches = [];
+            state.texts = [];
+            state.history = [];
+            state.redoStack = [];
+            emptyState.style.display = 'none';
+            resetZoom();
+            rebuildBoxColorLayer();
+            saveHistory();
+            render();
+        }
+
+        function loadImageFromFileLegacy(file) {
+            // Fallback path for browsers without createImageBitmap()'s
+            // imageOrientation option. This can NOT be relied on to fix EXIF
+            // rotation by itself (browsers are inconsistent about honoring EXIF
+            // orientation inside a plain drawImage call), but it at least keeps
+            // the app working, and still bakes to a plain canvas so every later
+            // draw of it is at least internally consistent.
             const reader = new FileReader();
             reader.onload = (evt) => {
                 const img = new Image();
                 img.onload = () => {
-                    // Some phone photos carry an EXIF orientation tag (portrait shots are
-                    // often stored as rotated landscape pixels + a "please rotate 90°"
-                    // flag). A plain <img> respects that tag when painted normally, but a
-                    // canvas drawImage() call made *inside* an active rotate/translate
-                    // transform (exactly what the punch-to-box slice below does) can
-                    // apply that correction inconsistently across browsers, which is what
-                    // produced the occasional "punched slice looks rotated 90°" glitch.
-                    // Baking the image onto a plain canvas once, up front, "burns in" the
-                    // correct orientation as plain pixels with no leftover metadata, so
-                    // every later drawImage() of it — transformed or not — behaves
-                    // identically.
                     const normalized = document.createElement('canvas');
                     normalized.width = img.naturalWidth || img.width;
                     normalized.height = img.naturalHeight || img.height;
                     normalized.getContext('2d').drawImage(img, 0, 0);
-
-                    state.image = normalized;
-                    state.imageWidth = normalized.width;
-                    state.imageHeight = normalized.height;
-                    state.punches = [];
-                    state.texts = [];
-                    state.history = [];
-                    state.redoStack = [];
-                    emptyState.style.display = 'none';
-                    resetZoom();
-                    rebuildBoxColorLayer();
-                    saveHistory();
-                    render();
+                    finishImageLoad(normalized);
                 };
                 img.src = evt.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        function loadImageFromFile(file) {
+            // Phone photos (especially portrait shots) often carry an EXIF
+            // "Orientation" tag rather than storing pixels already right-side-up.
+            // Whether a plain <img> or a canvas drawImage() call honors that tag
+            // has historically been inconsistent across browsers — and doubly so
+            // inside a canvas transform like the punch-to-box slice below — which
+            // is what caused the "punched piece looks rotated 90° on the box"
+            // glitch. createImageBitmap's imageOrientation:'from-image' option is
+            // an explicit, standardized instruction (not a fallback default), so
+            // the bitmap it returns is guaranteed already right-side-up with the
+            // orientation tag fully consumed — no metadata left behind for any
+            // later drawImage() call to interpret differently.
+            if (typeof createImageBitmap === 'function') {
+                createImageBitmap(file, { imageOrientation: 'from-image' })
+                    .then((bitmap) => {
+                        const normalized = document.createElement('canvas');
+                        normalized.width = bitmap.width;
+                        normalized.height = bitmap.height;
+                        normalized.getContext('2d').drawImage(bitmap, 0, 0);
+                        bitmap.close();
+                        finishImageLoad(normalized);
+                    })
+                    .catch(() => loadImageFromFileLegacy(file));
+            } else {
+                loadImageFromFileLegacy(file);
+            }
         }
 
         // --- Control Listeners ---
@@ -1033,6 +1069,11 @@
 
         // Click the badge to snap back to 100%
         zoomIndicator.addEventListener('click', resetZoom);
+
+        // On-screen +/- buttons — the only way to zoom on a touch device, since
+        // there's no Ctrl key or scroll wheel there.
+        btnZoomIn.addEventListener('click', zoomIn);
+        btnZoomOut.addEventListener('click', zoomOut);
 
         // --- Shape Drawing Functions ---
         function drawShapePath(ctx, shape, radius) {
@@ -1383,6 +1424,174 @@
                 render();
             }
         });
+
+        // --- Touch support (phones/tablets) ---
+        // Mice have three distinct gestures here (left-click, left-drag,
+        // right-click) but a finger only has "tap" and "hold", so touch maps to:
+        //   • tap on empty photo area  -> punch (same as a left-click)
+        //   • touch-and-drag on a text -> move it (same as left-click-drag)
+        //   • long-press on a text     -> open the edit modal (same as right-click)
+        //   • long-press on a punch    -> delete it (same as right-click);
+        //     a plain tap on an existing punch does nothing, since fingers are
+        //     less precise than a mouse and shouldn't accidentally stack a new
+        //     punch on top of one you were just trying to touch
+        //   • two-finger pinch         -> zoom (there's no Ctrl+wheel on a phone)
+        // Panning when the canvas is bigger than the screen is left to the
+        // browser's native touch-scrolling (touch-action: pan-x pan-y on the
+        // viewport), so it isn't reimplemented here.
+        const TOUCH_LONG_PRESS_MS = 500;
+        const TOUCH_MOVE_CANCEL_PX = 10;
+        const touchState = {
+            mode: null, // 'text' | 'watch-punch' | 'pinch' | null
+            startX: 0,
+            startY: 0,
+            targetIndex: -1,
+            longPressTimer: null,
+            pinchStartDist: 0,
+            pinchStartZoom: 1
+        };
+
+        function clearTouchLongPress() {
+            if (touchState.longPressTimer) {
+                clearTimeout(touchState.longPressTimer);
+                touchState.longPressTimer = null;
+            }
+        }
+
+        function getTouchCanvasPos(touch) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            return {
+                x: (touch.clientX - rect.left) * scaleX,
+                y: (touch.clientY - rect.top) * scaleY
+            };
+        }
+
+        mainCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                // A second finger just landed — cancel whatever the first finger
+                // was doing and switch entirely to pinch-zoom.
+                clearTouchLongPress();
+                state.isDraggingText = false;
+                touchState.mode = 'pinch';
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                touchState.pinchStartDist = Math.hypot(dx, dy) || 1;
+                touchState.pinchStartZoom = state.viewZoom;
+                e.preventDefault();
+                return;
+            }
+            if (e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const pos = getTouchCanvasPos(touch);
+            touchState.startX = touch.clientX;
+            touchState.startY = touch.clientY;
+
+            // 1. Touching an existing text: start a potential drag, and arm a
+            //    long-press timer that opens the edit modal if the finger never
+            //    moves away.
+            const textIdx = getTextAtPos(pos.x, pos.y);
+            if (textIdx !== -1) {
+                state.selectedTextIndex = textIdx;
+                state.isDraggingText = true;
+                state.dragOffset = {
+                    x: pos.x - state.texts[textIdx].x,
+                    y: pos.y - state.texts[textIdx].y
+                };
+                touchState.mode = 'text';
+                e.preventDefault();
+                clearTouchLongPress();
+                touchState.longPressTimer = setTimeout(() => {
+                    state.isDraggingText = false;
+                    touchState.mode = null;
+                    openTextEditModal(textIdx);
+                }, TOUCH_LONG_PRESS_MS);
+                return;
+            }
+
+            // 2. Touching an existing punch (hole or box piece): arm a long-press
+            //    timer to delete it. A quick tap here intentionally does nothing.
+            const punchIdx = getPunchAtPos(pos.x, pos.y);
+            if (punchIdx !== -1) {
+                touchState.mode = 'watch-punch';
+                touchState.targetIndex = punchIdx;
+                e.preventDefault();
+                clearTouchLongPress();
+                touchState.longPressTimer = setTimeout(() => {
+                    state.punches.splice(touchState.targetIndex, 1);
+                    saveHistory();
+                    render();
+                    touchState.mode = null;
+                }, TOUCH_LONG_PRESS_MS);
+                return;
+            }
+
+            // 3. Otherwise, a tap on the photo punches immediately — no need to
+            //    wait for the finger to lift, matching the desktop's mousedown.
+            const rel = getRelativeImageCoords(pos.x, pos.y);
+            if (rel) {
+                state.punches.push({
+                    id: Date.now(),
+                    imageRelativeX: rel.x,
+                    imageRelativeY: rel.y,
+                    boxRelativeX: rel.x,
+                    boxRelativeY: rel.y,
+                    shape: state.punch.shape,
+                    size: state.punch.size,
+                    rotation: state.punch.rotation
+                });
+                saveHistory();
+                render();
+            }
+            // Any other touch (empty box area, outside the canvas) is left alone
+            // so native touch-scrolling can pan the viewport as usual.
+        }, { passive: false });
+
+        mainCanvas.addEventListener('touchmove', (e) => {
+            if (touchState.mode === 'pinch' && e.touches.length === 2) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.hypot(dx, dy);
+                setZoom(touchState.pinchStartZoom * (dist / touchState.pinchStartDist));
+                return;
+            }
+
+            if (e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            const moved = Math.hypot(touch.clientX - touchState.startX, touch.clientY - touchState.startY);
+
+            if (touchState.mode === 'text') {
+                e.preventDefault();
+                if (moved > TOUCH_MOVE_CANCEL_PX) clearTouchLongPress();
+                if (state.isDraggingText && state.selectedTextIndex !== -1) {
+                    const pos = getTouchCanvasPos(touch);
+                    state.texts[state.selectedTextIndex].x = pos.x - state.dragOffset.x;
+                    state.texts[state.selectedTextIndex].y = pos.y - state.dragOffset.y;
+                    render();
+                }
+                return;
+            }
+
+            if (touchState.mode === 'watch-punch' && moved > TOUCH_MOVE_CANCEL_PX) {
+                clearTouchLongPress();
+                touchState.mode = null;
+            }
+        }, { passive: false });
+
+        function endTouchInteraction() {
+            clearTouchLongPress();
+            if (touchState.mode === 'text' && state.isDraggingText) {
+                state.isDraggingText = false;
+                saveHistory();
+            }
+            touchState.mode = null;
+        }
+
+        mainCanvas.addEventListener('touchend', endTouchInteraction);
+        mainCanvas.addEventListener('touchcancel', endTouchInteraction);
 
         // --- Text Edit Modal Functionality ---
         function openTextEditModal(index) {
