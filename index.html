@@ -149,6 +149,9 @@
             <button id="btnRedo" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                 <i class="fa-solid fa-rotate-right text-xs"></i> 다시 실행
             </button>
+            <button id="btnAlign" disabled class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="펀칭된 조각들을 격자로 가운데 정렬해요">
+                <i class="fa-solid fa-table-cells text-xs"></i> 정렬
+            </button>
             <button id="btnClear" class="btn-danger-outline px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                 <i class="fa-solid fa-trash-can text-xs"></i> 전체 초기화
             </button>
@@ -382,6 +385,41 @@
         </div>
     </div>
 
+    <!-- Align Punches Modal -->
+    <div id="alignModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs" style="background-color: rgba(28, 34, 51, 0.4);">
+        <div class="design-card w-72 p-4 space-y-4" style="color: var(--ink);">
+            <div class="flex items-center justify-between border-b pb-2" style="border-color: var(--panel-border);">
+                <h3 class="text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells" style="color: var(--accent);"></i> 펀칭 정렬
+                </h3>
+                <button id="btnCloseAlignModal" class="text-sm transition" style="color: var(--ink-soft);">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">가로 최대 개수</label>
+                    <input type="number" id="alignColumnsInput" min="1" max="30" value="3" class="field-box w-full rounded-lg px-2.5 py-1.5 text-xs">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1" style="color: var(--ink-soft);">조각 사이 간격 (px)</label>
+                    <input type="number" id="alignGapInput" min="0" max="200" value="6" class="field-box w-full rounded-lg px-2.5 py-1.5 text-xs">
+                </div>
+                <p class="text-[10px] leading-relaxed" style="color: var(--ink-soft);">지정한 개수만큼 가로로 채운 뒤 다음 줄로 넘어가면서, 지정한 간격만큼만 띄워 겹치지 않게 가운데 정렬돼요.</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t" style="border-color: var(--panel-border);">
+                <button id="btnCancelAlign" class="btn-neutral px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                    취소
+                </button>
+                <button id="btnApplyAlign" class="btn-primary px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                    정렬하기
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- State Management ---
         const state = {
@@ -397,7 +435,11 @@
                 size: 60,
                 rotation: 0
             },
-            punches: [],           // [{ id, relativeX, relativeY, shape, size, rotation }]
+            punches: [],           // [{ id, imageRelativeX, imageRelativeY, boxRelativeX, boxRelativeY, shape, size, rotation }]
+                                    // imageRelative* = fixed hole position on the photo (never touched by Align).
+                                    // boxRelative*   = where the matching piece sits on the box (Align moves only this).
+                                    // The picture shown inside the box piece always samples the photo at
+                                    // imageRelative*, so it keeps showing what was originally punched there.
             texts: [],             // [{ id, x, y, content, color, size }]
             history: [],           // Undo stack
             redoStack: [],         // Redo stack
@@ -410,7 +452,9 @@
             viewZoom: 1,            // display-only scale of #canvasWrapper; never affects saved image size
             isHoveringViewport: false,
             isPanning: false,
-            panStart: null
+            panStart: null,
+            lastAlignColumns: 3,
+            lastAlignGap: 6
         };
 
         // --- DOM Elements ---
@@ -446,8 +490,17 @@
 
         const btnUndo = document.getElementById('btnUndo');
         const btnRedo = document.getElementById('btnRedo');
+        const btnAlign = document.getElementById('btnAlign');
         const btnClear = document.getElementById('btnClear');
         const btnDownload = document.getElementById('btnDownload');
+
+        // Align Modal Elements
+        const alignModal = document.getElementById('alignModal');
+        const alignColumnsInput = document.getElementById('alignColumnsInput');
+        const alignGapInput = document.getElementById('alignGapInput');
+        const btnCloseAlignModal = document.getElementById('btnCloseAlignModal');
+        const btnCancelAlign = document.getElementById('btnCancelAlign');
+        const btnApplyAlign = document.getElementById('btnApplyAlign');
 
         // View-zoom elements (display-only; does not touch canvas resolution)
         const canvasViewport = document.getElementById('canvasViewport');
@@ -486,11 +539,16 @@
             state.history.push(snap);
             state.redoStack = [];
             updateUndoRedoButtons();
+            updateAlignButtonState();
         }
 
         function updateUndoRedoButtons() {
             btnUndo.disabled = state.history.length <= 1;
             btnRedo.disabled = state.redoStack.length === 0;
+        }
+
+        function updateAlignButtonState() {
+            btnAlign.disabled = !state.image || state.punches.length === 0;
         }
 
         function undo() {
@@ -535,6 +593,7 @@
                 b.className = (b.dataset.pos === state.boxPosition) ? POS_BTN_ACTIVE : POS_BTN_BASE;
             });
 
+            updateAlignButtonState();
             centerViewport();
         }
 
@@ -771,6 +830,93 @@
             saveHistory();
             render();
         });
+
+        // --- Align Punches ---
+        // Rearranges only the BOX-side pieces into a tidy grid — the holes on the
+        // photo (imageRelativeX/Y) are never touched, and each piece keeps showing
+        // the photo content from its original punch spot no matter where it moves.
+        // Rows are packed left-aligned (every row starts at the same X), and the
+        // whole block of rows is then centered as one unit, both horizontally and
+        // vertically, within the box. The gap between pieces is user-adjustable.
+
+        btnAlign.addEventListener('click', () => {
+            if (!state.image || state.punches.length === 0) return;
+            alignColumnsInput.value = state.lastAlignColumns || 3;
+            alignGapInput.value = state.lastAlignGap ?? 6;
+            alignModal.classList.remove('hidden');
+            alignColumnsInput.focus();
+            alignColumnsInput.select();
+        });
+
+        function closeAlignModal() { alignModal.classList.add('hidden'); }
+        btnCloseAlignModal.addEventListener('click', closeAlignModal);
+        btnCancelAlign.addEventListener('click', closeAlignModal);
+
+        btnApplyAlign.addEventListener('click', () => {
+            const columns = Math.max(1, parseInt(alignColumnsInput.value, 10) || 1);
+            const gap = Math.max(0, parseInt(alignGapInput.value, 10) || 0);
+            state.lastAlignColumns = columns;
+            state.lastAlignGap = gap;
+            alignPunchesGrid(columns, gap);
+            closeAlignModal();
+        });
+
+        [alignColumnsInput, alignGapInput].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    btnApplyAlign.click();
+                }
+            });
+        });
+
+        function alignPunchesGrid(columns, gap) {
+            if (state.punches.length === 0) return;
+            const w = state.imageWidth;
+            const h = state.imageHeight;
+
+            // Ordering always comes from the fixed hole positions on the photo
+            // (imageRelativeX/Y), never from wherever the box pieces currently sit —
+            // that way re-running Align with different settings is always based on
+            // the same stable reading order.
+            const ordered = [...state.punches].sort((a, b) => {
+                if (Math.abs(a.imageRelativeY - b.imageRelativeY) > 1) return a.imageRelativeY - b.imageRelativeY;
+                return a.imageRelativeX - b.imageRelativeX;
+            });
+
+            const rows = [];
+            for (let i = 0; i < ordered.length; i += columns) {
+                rows.push(ordered.slice(i, i + columns));
+            }
+
+            const rowHeights = rows.map(row => Math.max(...row.map(p => p.size)));
+            const rowWidths = rows.map(row => row.reduce((sum, p) => sum + p.size, 0) + gap * (row.length - 1));
+
+            // The block's own size is set by its widest row and total stacked
+            // height — rows don't each center themselves, they all share the same
+            // left edge; only this outer block gets centered in the box.
+            const blockWidth = Math.max(...rowWidths);
+            const blockHeight = rowHeights.reduce((sum, rh) => sum + rh, 0) + gap * (rows.length - 1);
+            const blockLeft = Math.max(0, (w - blockWidth) / 2);
+            const blockTop = Math.max(0, (h - blockHeight) / 2);
+
+            let currentY = blockTop;
+            rows.forEach((row, rowIndex) => {
+                const rowHeight = rowHeights[rowIndex];
+                let currentX = blockLeft; // left-aligned: every row starts at the same X
+
+                row.forEach(p => {
+                    p.boxRelativeX = currentX + p.size / 2;
+                    p.boxRelativeY = currentY + rowHeight / 2;
+                    currentX += p.size + gap;
+                });
+
+                currentY += rowHeight + gap;
+            });
+
+            saveHistory();
+            render();
+        }
 
         btnDownload.addEventListener('click', () => {
             if (!state.image) return;
@@ -1011,28 +1157,31 @@
                 const radius = p.size / 2;
                 const rotRad = (p.rotation * Math.PI) / 180;
 
-                // 3-1: Fill hole on Image with the same Box material (color/gradient),
-                // sampled from the same relative position as the box itself.
+                // 3-1: Fill the hole on the Image with the Box material (color/gradient).
+                // Always at the hole's original (fixed) position — Align never moves this.
                 ctx.save();
-                ctx.translate(layout.imgX + p.relativeX, layout.imgY + p.relativeY);
+                ctx.translate(layout.imgX + p.imageRelativeX, layout.imgY + p.imageRelativeY);
                 ctx.rotate(rotRad);
                 drawShapePath(ctx, p.shape, radius);
                 ctx.clip();
-                ctx.drawImage(boxLayerCanvas, -p.relativeX, -p.relativeY, layout.w, layout.h);
+                ctx.drawImage(boxLayerCanvas, -p.imageRelativeX, -p.imageRelativeY, layout.w, layout.h);
                 ctx.restore();
 
-                // 3-2: Cut hole on Box & Transfer exact Image Slice onto Box
+                // 3-2: Draw the matching piece on the Box. It's positioned at
+                // boxRelativeX/Y (which Align is free to rearrange), but always
+                // shows the photo as it looked at the ORIGINAL punch spot
+                // (imageRelativeX/Y) — moving a piece around the box never changes
+                // what picture is inside it.
                 ctx.save();
-                ctx.translate(layout.boxX + p.relativeX, layout.boxY + p.relativeY);
+                ctx.translate(layout.boxX + p.boxRelativeX, layout.boxY + p.boxRelativeY);
                 ctx.rotate(rotRad);
                 drawShapePath(ctx, p.shape, radius);
                 ctx.clip(); // Clip slice shape
 
-                // Draw matching section of image inside clip
                 ctx.drawImage(
                     state.image,
                     0, 0, layout.w, layout.h,
-                    -p.relativeX, -p.relativeY, layout.w, layout.h
+                    -p.imageRelativeX, -p.imageRelativeY, layout.w, layout.h
                 );
                 ctx.restore();
             });
@@ -1120,14 +1269,18 @@
         function getPunchAtPos(cx, cy) {
             const layout = getLayout();
             let rel = null;
+            let area = null;
 
-            // Check if click was on image area
+            // Check if click was on image area (holes live at imageRelativeX/Y there)
             if (cx >= layout.imgX && cx <= layout.imgX + layout.w && cy >= layout.imgY && cy <= layout.imgY + layout.h) {
                 rel = { x: cx - layout.imgX, y: cy - layout.imgY };
+                area = 'image';
             }
-            // Check if click was on box area
+            // Check if click was on box area (pieces live at boxRelativeX/Y there,
+            // which can differ from the hole's position once Align has run)
             else if (cx >= layout.boxX && cx <= layout.boxX + layout.w && cy >= layout.boxY && cy <= layout.boxY + layout.h) {
                 rel = { x: cx - layout.boxX, y: cy - layout.boxY };
+                area = 'box';
             }
 
             if (!rel) return -1;
@@ -1135,8 +1288,10 @@
             // Check punches in reverse (topmost first)
             for (let i = state.punches.length - 1; i >= 0; i--) {
                 const p = state.punches[i];
-                const dx = rel.x - p.relativeX;
-                const dy = rel.y - p.relativeY;
+                const px = area === 'image' ? p.imageRelativeX : p.boxRelativeX;
+                const py = area === 'image' ? p.imageRelativeY : p.boxRelativeY;
+                const dx = rel.x - px;
+                const dy = rel.y - py;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist <= p.size / 2) {
                     return i;
@@ -1188,8 +1343,10 @@
             if (rel) {
                 state.punches.push({
                     id: Date.now(),
-                    relativeX: rel.x,
-                    relativeY: rel.y,
+                    imageRelativeX: rel.x,
+                    imageRelativeY: rel.y,
+                    boxRelativeX: rel.x,   // starts matching the hole 1:1; Align can move only this
+                    boxRelativeY: rel.y,
                     shape: state.punch.shape,
                     size: state.punch.size,
                     rotation: state.punch.rotation
